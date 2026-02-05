@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+// Prefer Binance global (cleaner data) — falls back to Binance US.
+// Binance US has known bad wicks from low-liquidity periods.
 const BINANCE_ENDPOINTS = [
-  'https://api.binance.us/api/v3/klines',
   'https://api.binance.com/api/v3/klines',
+  'https://api.binance.us/api/v3/klines',
 ];
 const MAX_LIMIT = 1000;
 
