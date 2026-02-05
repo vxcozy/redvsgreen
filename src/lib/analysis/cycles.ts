@@ -1,31 +1,35 @@
 import { OHLCV, CyclePoint, Cycle, CycleAnalysis, CycleProjection, Asset } from '../types';
 
 // ── Known historical cycle points ──────────────────────────────────
-// Full history from genesis. Pre-Binance points use hardcoded prices
+// Full history from early BTC. Pre-Binance points use hardcoded prices
 // from CoinMarketCap/CoinGecko historical data and are used for
 // cycle duration calculations even without matching candle data.
 
 const KNOWN_BTC_POINTS: CyclePoint[] = [
-  // Start from Cycle 2 to avoid genesis price=0 distorting averages
+  // Cycle 1
   { type: 'trough', date: '2011-11-18', price: 2.05, index: -1, source: 'known' },   // Post-first-bubble bottom
-  // Cycle 2
   { type: 'peak', date: '2013-11-29', price: 1163, index: -1, source: 'known' },     // Second bubble
+  // Cycle 2
   { type: 'trough', date: '2015-01-14', price: 152, index: -1, source: 'known' },    // Bear market bottom
-  // Cycle 3
   { type: 'peak', date: '2017-12-17', price: 19783, index: -1, source: 'known' },    // ICO mania top
+  // Cycle 3
   { type: 'trough', date: '2018-12-15', price: 3122, index: -1, source: 'known' },   // Crypto winter
-  // Cycle 4
   { type: 'peak', date: '2021-11-10', price: 68789, index: -1, source: 'known' },    // Post-halving peak
+  // Cycle 4 (current)
   { type: 'trough', date: '2022-11-21', price: 15460, index: -1, source: 'known' },  // FTX collapse bottom
+  // Peak TBD — will be computed from candle data as "running peak"
 ];
 
 const KNOWN_ETH_POINTS: CyclePoint[] = [
-  // ETH launched Jul 2015 at ~$0.31
+  // Cycle 1
   { type: 'trough', date: '2015-10-21', price: 0.42, index: -1, source: 'known' },   // Early low
   { type: 'peak', date: '2018-01-13', price: 1432, index: -1, source: 'known' },     // ICO mania top
+  // Cycle 2
   { type: 'trough', date: '2018-12-15', price: 84, index: -1, source: 'known' },     // Crypto winter
   { type: 'peak', date: '2021-11-10', price: 4878, index: -1, source: 'known' },     // DeFi/NFT peak
+  // Cycle 3 (current)
   { type: 'trough', date: '2022-06-18', price: 880, index: -1, source: 'known' },    // Bear bottom
+  // Peak TBD
 ];
 
 // ── Algorithm parameters ───────────────────────────────────────────
@@ -42,7 +46,6 @@ function daysBetween(dateA: string, dateB: string): number {
 }
 
 function findCandleIndex(candles: OHLCV[], date: string): number {
-  // Binary-ish search for the closest candle to a date
   for (let i = 0; i < candles.length; i++) {
     if (candles[i].date >= date) return i;
   }
@@ -50,9 +53,6 @@ function findCandleIndex(candles: OHLCV[], date: string): number {
 }
 
 // ── Resolve known points against actual candle data ────────────────
-// Points before candle data retain their hardcoded prices and get
-// index -1 (used for cycle math but not chart rendering).
-// Points within candle data get resolved to actual prices.
 
 function resolveKnownPoints(
   candles: OHLCV[],
@@ -64,10 +64,9 @@ function resolveKnownPoints(
   const lastDate = candles[candles.length - 1].date;
 
   return knownPoints
-    .filter((p) => p.date <= lastDate) // include pre-data + in-data points
+    .filter((p) => p.date <= lastDate)
     .map((p) => {
       if (p.date < firstDate) {
-        // Pre-data: keep hardcoded price, mark index as -1
         return { ...p, index: -1 };
       }
       const idx = findCandleIndex(candles, p.date);
@@ -79,7 +78,7 @@ function resolveKnownPoints(
     });
 }
 
-// ── Algorithmic detection for new cycle points ─────────────────────
+// ── Algorithmic detection for confirmed cycle points ─────────────
 
 function detectNewPoints(
   candles: OHLCV[],
@@ -88,21 +87,13 @@ function detectNewPoints(
   const detected: CyclePoint[] = [];
   if (candles.length < WINDOW_DAYS * 2) return detected;
 
-  // Start scanning after the last known point + min separation
-  // If lastKnownPoint.index is -1 (pre-data), start from WINDOW_DAYS
   const startIdx = lastKnownPoint && lastKnownPoint.index >= 0
-    ? Math.max(
-        lastKnownPoint.index + MIN_SEPARATION_DAYS,
-        WINDOW_DAYS
-      )
+    ? Math.max(lastKnownPoint.index + MIN_SEPARATION_DAYS, WINDOW_DAYS)
     : WINDOW_DAYS;
 
-  // We can only detect points where we have WINDOW_DAYS of future data
   const endIdx = candles.length - WINDOW_DAYS;
-
   if (startIdx >= endIdx) return detected;
 
-  // Determine what type we expect next
   let expectType: 'peak' | 'trough' | null = null;
   if (lastKnownPoint) {
     expectType = lastKnownPoint.type === 'peak' ? 'trough' : 'peak';
@@ -112,7 +103,6 @@ function detectNewPoints(
     const windowStart = Math.max(0, i - WINDOW_DAYS);
     const windowEnd = Math.min(candles.length - 1, i + WINDOW_DAYS);
 
-    // Check if this is a local maximum (peak candidate)
     if (expectType !== 'trough') {
       let isLocalMax = true;
       for (let j = windowStart; j <= windowEnd; j++) {
@@ -121,22 +111,15 @@ function detectNewPoints(
           break;
         }
       }
-
       if (isLocalMax) {
-        // Prominence check: must be significantly above the window's lows
         const windowLow = Math.min(
           ...candles.slice(windowStart, windowEnd + 1).map((c) => c.low)
         );
         const prominence = (candles[i].high - windowLow) / windowLow;
-
         if (prominence >= PROMINENCE_THRESHOLD) {
-          // Check min separation from last detected point
           const lastDetected = detected[detected.length - 1];
           const lastPoint = lastDetected || lastKnownPoint;
-          if (
-            !lastPoint ||
-            daysBetween(candles[i].date, lastPoint.date) >= MIN_SEPARATION_DAYS
-          ) {
+          if (!lastPoint || daysBetween(candles[i].date, lastPoint.date) >= MIN_SEPARATION_DAYS) {
             detected.push({
               type: 'peak',
               date: candles[i].date,
@@ -150,7 +133,6 @@ function detectNewPoints(
       }
     }
 
-    // Check if this is a local minimum (trough candidate)
     if (expectType !== 'peak') {
       let isLocalMin = true;
       for (let j = windowStart; j <= windowEnd; j++) {
@@ -159,20 +141,15 @@ function detectNewPoints(
           break;
         }
       }
-
       if (isLocalMin) {
         const windowHigh = Math.max(
           ...candles.slice(windowStart, windowEnd + 1).map((c) => c.high)
         );
         const prominence = (windowHigh - candles[i].low) / candles[i].low;
-
         if (prominence >= PROMINENCE_THRESHOLD) {
           const lastDetected = detected[detected.length - 1];
           const lastPoint = lastDetected || lastKnownPoint;
-          if (
-            !lastPoint ||
-            daysBetween(candles[i].date, lastPoint.date) >= MIN_SEPARATION_DAYS
-          ) {
+          if (!lastPoint || daysBetween(candles[i].date, lastPoint.date) >= MIN_SEPARATION_DAYS) {
             detected.push({
               type: 'trough',
               date: candles[i].date,
@@ -190,6 +167,52 @@ function detectNewPoints(
   return detected;
 }
 
+// ── Find the running (unconfirmed) peak/trough since last cycle point ──
+
+function findRunningPeakSince(
+  candles: OHLCV[],
+  sinceDate: string
+): CyclePoint {
+  const startIdx = findCandleIndex(candles, sinceDate);
+  let best = candles[startIdx];
+  let bestIdx = startIdx;
+  for (let i = startIdx + 1; i < candles.length; i++) {
+    if (candles[i].high > best.high) {
+      best = candles[i];
+      bestIdx = i;
+    }
+  }
+  return {
+    type: 'peak',
+    date: best.date,
+    price: best.high,
+    index: bestIdx,
+    source: 'detected',
+  };
+}
+
+function findRunningTroughSince(
+  candles: OHLCV[],
+  sinceDate: string
+): CyclePoint {
+  const startIdx = findCandleIndex(candles, sinceDate);
+  let best = candles[startIdx];
+  let bestIdx = startIdx;
+  for (let i = startIdx + 1; i < candles.length; i++) {
+    if (candles[i].low < best.low) {
+      best = candles[i];
+      bestIdx = i;
+    }
+  }
+  return {
+    type: 'trough',
+    date: best.date,
+    price: best.low,
+    index: bestIdx,
+    source: 'detected',
+  };
+}
+
 // ── Build cycles from ordered points ───────────────────────────────
 
 export function buildCycles(points: CyclePoint[]): Cycle[] {
@@ -198,12 +221,10 @@ export function buildCycles(points: CyclePoint[]): Cycle[] {
     const from = points[i];
     const to = points[i + 1];
     const duration = daysBetween(from.date, to.date);
-    // Guard against division by zero (e.g. genesis price = 0)
     const pctChange = from.price > 0
       ? ((to.price - from.price) / from.price) * 100
       : 0;
 
-    // trough → peak = bull, peak → trough = bear
     const direction: 'bull' | 'bear' =
       from.type === 'trough' && to.type === 'peak' ? 'bull' : 'bear';
 
@@ -239,13 +260,10 @@ function computeProjections(
   const today = new Date(todayStr).getTime();
 
   if (currentPhase === 'bull') {
-    // Last point was a trough → project when the next peak will hit
     const projectedTopDate = addDaysToDate(lastPoint.date, avgBullDuration);
     const daysUntilTop = Math.round(
       (new Date(projectedTopDate).getTime() - today) / 86400000
     );
-
-    // After the projected top, project the next bottom
     const projectedBottomDate = addDaysToDate(projectedTopDate, avgBearDuration);
     const daysUntilBottom = Math.round(
       (new Date(projectedBottomDate).getTime() - today) / 86400000
@@ -266,13 +284,10 @@ function computeProjections(
       },
     };
   } else {
-    // Last point was a peak → project when the next trough will hit
     const projectedBottomDate = addDaysToDate(lastPoint.date, avgBearDuration);
     const daysUntilBottom = Math.round(
       (new Date(projectedBottomDate).getTime() - today) / 86400000
     );
-
-    // After the projected bottom, project the next top
     const projectedTopDate = addDaysToDate(projectedBottomDate, avgBullDuration);
     const daysUntilTop = Math.round(
       (new Date(projectedTopDate).getTime() - today) / 86400000
@@ -306,7 +321,6 @@ export function computeCycleAnalysis(
   const knownRaw = asset === 'BTC' ? KNOWN_BTC_POINTS : KNOWN_ETH_POINTS;
   const knownResolved = resolveKnownPoints(candles, knownRaw);
 
-  // Detect new points after the last known one
   const lastKnown =
     knownResolved.length > 0
       ? knownResolved[knownResolved.length - 1]
@@ -315,7 +329,6 @@ export function computeCycleAnalysis(
   const newPoints = detectNewPoints(candles, lastKnown);
 
   const allPoints = [...knownResolved, ...newPoints].sort((a, b) => {
-    // Sort by date for pre-data points (index -1), then by index
     if (a.index === -1 && b.index === -1) return a.date.localeCompare(b.date);
     if (a.index === -1) return -1;
     if (b.index === -1) return -1;
@@ -323,7 +336,6 @@ export function computeCycleAnalysis(
   });
 
   if (allPoints.length < 2) {
-    // Not enough points to form a cycle — return minimal info
     const today = candles[candles.length - 1].date;
     const peaks = allPoints.filter((p) => p.type === 'peak');
     const troughs = allPoints.filter((p) => p.type === 'trough');
@@ -341,7 +353,7 @@ export function computeCycleAnalysis(
       avgBearDuration: 0,
       avgBullReturn: 0,
       avgBearDrawdown: 0,
-      currentPhase: latestTrough && (!latestPeak || latestTrough.index > latestPeak.index)
+      currentPhase: latestTrough && (!latestPeak || latestTrough.date > latestPeak.date)
         ? 'bull'
         : 'bear',
       phaseProgress: 0,
@@ -350,6 +362,7 @@ export function computeCycleAnalysis(
     };
   }
 
+  // Build completed cycles for historical averages
   const cycles = buildCycles(allPoints);
   const bullCycles = cycles.filter((c) => c.direction === 'bull');
   const bearCycles = cycles.filter((c) => c.direction === 'bear');
@@ -362,7 +375,7 @@ export function computeCycleAnalysis(
     bearCycles.length > 0
       ? bearCycles.reduce((s, c) => s + c.durationDays, 0) / bearCycles.length
       : 0;
-  // Filter out cycles with Infinity/NaN/zero percent changes for averages
+
   const validBullCycles = bullCycles.filter(
     (c) => isFinite(c.percentChange) && c.percentChange !== 0
   );
@@ -380,38 +393,35 @@ export function computeCycleAnalysis(
 
   const today = candles[candles.length - 1].date;
 
-  // Find the ACTUAL all-time high and all-time low from candle data
-  // This gives us the real "days from peak/bottom" regardless of cycle points
-  let athCandle = candles[0];
-  let atlCandle = candles[0];
-  for (let i = 1; i < candles.length; i++) {
-    if (candles[i].high > athCandle.high) athCandle = candles[i];
-    if (candles[i].low < atlCandle.low) atlCandle = candles[i];
+  // ── Current cycle: determine phase from last confirmed point ──
+  const lastConfirmedPoint = allPoints[allPoints.length - 1];
+  const currentPhase: 'bull' | 'bear' =
+    lastConfirmedPoint.type === 'trough' ? 'bull' : 'bear';
+
+  // ── Current cycle peak/trough ──
+  // Find the running (unconfirmed) peak since the last trough,
+  // or the running trough since the last peak.
+  // "Days from Peak" = days since highest price in current bull run
+  // "Days from Bottom" = days since the cycle trough that started this run
+  let currentPeak: CyclePoint;
+  let currentTrough: CyclePoint;
+
+  if (currentPhase === 'bull') {
+    // We're in a bull run from the last confirmed trough
+    // The "bottom" is the last confirmed trough
+    // The "peak" is the highest price since that trough (running ATH of this cycle)
+    currentTrough = lastConfirmedPoint;
+    currentPeak = findRunningPeakSince(candles, lastConfirmedPoint.date);
+  } else {
+    // We're in a bear from the last confirmed peak
+    // The "peak" is the last confirmed peak
+    // The "trough" is the lowest price since that peak (running low of this cycle)
+    currentPeak = lastConfirmedPoint;
+    currentTrough = findRunningTroughSince(candles, lastConfirmedPoint.date);
   }
 
-  // Use actual ATH/ATL as the displayed peak/trough
-  const actualPeak: CyclePoint = {
-    type: 'peak',
-    date: athCandle.date,
-    price: athCandle.high,
-    index: candles.indexOf(athCandle),
-    source: 'detected',
-  };
-  const actualTrough: CyclePoint = {
-    type: 'trough',
-    date: atlCandle.date,
-    price: atlCandle.low,
-    index: candles.indexOf(atlCandle),
-    source: 'detected',
-  };
-
-  // Current phase: if the last cycle point is a trough, we're in bull; if peak, we're in bear
-  const lastPoint = allPoints[allPoints.length - 1];
-  const currentPhase: 'bull' | 'bear' =
-    lastPoint.type === 'trough' ? 'bull' : 'bear';
-
   // Phase progress: how far into the avg cycle duration we are
-  const daysSinceLastPoint = daysBetween(today, lastPoint.date);
+  const daysSinceLastPoint = daysBetween(today, lastConfirmedPoint.date);
   const avgDuration = currentPhase === 'bull' ? avgBullDuration : avgBearDuration;
   const phaseProgress = avgDuration > 0
     ? Math.min(daysSinceLastPoint / avgDuration, 1.5)
@@ -420,7 +430,7 @@ export function computeCycleAnalysis(
   // Compute projected cycle top/bottom dates
   const { projectedTop, projectedBottom } = computeProjections(
     currentPhase,
-    lastPoint,
+    lastConfirmedPoint,
     today,
     avgBullDuration,
     avgBearDuration,
@@ -431,10 +441,10 @@ export function computeCycleAnalysis(
   return {
     cycles,
     allPoints,
-    currentPeak: actualPeak,
-    currentTrough: actualTrough,
-    daysSincePeak: daysBetween(today, actualPeak.date),
-    daysSinceTrough: daysBetween(today, actualTrough.date),
+    currentPeak,
+    currentTrough,
+    daysSincePeak: daysBetween(today, currentPeak.date),
+    daysSinceTrough: daysBetween(today, currentTrough.date),
     avgBullDuration: Math.round(avgBullDuration),
     avgBearDuration: Math.round(avgBearDuration),
     avgBullReturn,
