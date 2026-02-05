@@ -6,10 +6,8 @@ import { OHLCV, CyclePoint, Cycle, CycleAnalysis, CycleProjection, Asset } from 
 // cycle duration calculations even without matching candle data.
 
 const KNOWN_BTC_POINTS: CyclePoint[] = [
-  // Cycle 1: Genesis → first major peak
-  { type: 'trough', date: '2009-01-03', price: 0, index: -1, source: 'known' },     // Genesis block
-  { type: 'peak', date: '2011-06-08', price: 31.91, index: -1, source: 'known' },    // First bubble peak
-  { type: 'trough', date: '2011-11-18', price: 2.05, index: -1, source: 'known' },   // Post-bubble bottom
+  // Start from Cycle 2 to avoid genesis price=0 distorting averages
+  { type: 'trough', date: '2011-11-18', price: 2.05, index: -1, source: 'known' },   // Post-first-bubble bottom
   // Cycle 2
   { type: 'peak', date: '2013-11-29', price: 1163, index: -1, source: 'known' },     // Second bubble
   { type: 'trough', date: '2015-01-14', price: 152, index: -1, source: 'known' },    // Bear market bottom
@@ -200,7 +198,10 @@ export function buildCycles(points: CyclePoint[]): Cycle[] {
     const from = points[i];
     const to = points[i + 1];
     const duration = daysBetween(from.date, to.date);
-    const pctChange = ((to.price - from.price) / from.price) * 100;
+    // Guard against division by zero (e.g. genesis price = 0)
+    const pctChange = from.price > 0
+      ? ((to.price - from.price) / from.price) * 100
+      : 0;
 
     // trough → peak = bull, peak → trough = bear
     const direction: 'bull' | 'bear' =
@@ -361,22 +362,50 @@ export function computeCycleAnalysis(
     bearCycles.length > 0
       ? bearCycles.reduce((s, c) => s + c.durationDays, 0) / bearCycles.length
       : 0;
+  // Filter out cycles with Infinity/NaN/zero percent changes for averages
+  const validBullCycles = bullCycles.filter(
+    (c) => isFinite(c.percentChange) && c.percentChange !== 0
+  );
+  const validBearCycles = bearCycles.filter(
+    (c) => isFinite(c.percentChange) && c.percentChange !== 0
+  );
   const avgBullReturn =
-    bullCycles.length > 0
-      ? bullCycles.reduce((s, c) => s + c.percentChange, 0) / bullCycles.length
+    validBullCycles.length > 0
+      ? validBullCycles.reduce((s, c) => s + c.percentChange, 0) / validBullCycles.length
       : 0;
   const avgBearDrawdown =
-    bearCycles.length > 0
-      ? bearCycles.reduce((s, c) => s + c.percentChange, 0) / bearCycles.length
+    validBearCycles.length > 0
+      ? validBearCycles.reduce((s, c) => s + c.percentChange, 0) / validBearCycles.length
       : 0;
 
   const today = candles[candles.length - 1].date;
-  const peaks = allPoints.filter((p) => p.type === 'peak');
-  const troughs = allPoints.filter((p) => p.type === 'trough');
-  const latestPeak = peaks.length > 0 ? peaks[peaks.length - 1] : null;
-  const latestTrough = troughs.length > 0 ? troughs[troughs.length - 1] : null;
 
-  // Current phase: if the last point is a trough, we're in bull; if peak, we're in bear
+  // Find the ACTUAL all-time high and all-time low from candle data
+  // This gives us the real "days from peak/bottom" regardless of cycle points
+  let athCandle = candles[0];
+  let atlCandle = candles[0];
+  for (let i = 1; i < candles.length; i++) {
+    if (candles[i].high > athCandle.high) athCandle = candles[i];
+    if (candles[i].low < atlCandle.low) atlCandle = candles[i];
+  }
+
+  // Use actual ATH/ATL as the displayed peak/trough
+  const actualPeak: CyclePoint = {
+    type: 'peak',
+    date: athCandle.date,
+    price: athCandle.high,
+    index: candles.indexOf(athCandle),
+    source: 'detected',
+  };
+  const actualTrough: CyclePoint = {
+    type: 'trough',
+    date: atlCandle.date,
+    price: atlCandle.low,
+    index: candles.indexOf(atlCandle),
+    source: 'detected',
+  };
+
+  // Current phase: if the last cycle point is a trough, we're in bull; if peak, we're in bear
   const lastPoint = allPoints[allPoints.length - 1];
   const currentPhase: 'bull' | 'bear' =
     lastPoint.type === 'trough' ? 'bull' : 'bear';
@@ -402,10 +431,10 @@ export function computeCycleAnalysis(
   return {
     cycles,
     allPoints,
-    currentPeak: latestPeak,
-    currentTrough: latestTrough,
-    daysSincePeak: latestPeak ? daysBetween(today, latestPeak.date) : 0,
-    daysSinceTrough: latestTrough ? daysBetween(today, latestTrough.date) : 0,
+    currentPeak: actualPeak,
+    currentTrough: actualTrough,
+    daysSincePeak: daysBetween(today, actualPeak.date),
+    daysSinceTrough: daysBetween(today, actualTrough.date),
     avgBullDuration: Math.round(avgBullDuration),
     avgBearDuration: Math.round(avgBearDuration),
     avgBullReturn,

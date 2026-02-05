@@ -16,6 +16,7 @@ function formatDays(d: number): string {
 }
 
 function formatPct(v: number): string {
+  if (!isFinite(v)) return 'N/A';
   const sign = v >= 0 ? '+' : '';
   return `${sign}${v.toFixed(0)}%`;
 }
