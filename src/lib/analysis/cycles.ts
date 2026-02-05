@@ -329,9 +329,12 @@ export function computeCycleAnalysis(
   const newPoints = detectNewPoints(candles, lastKnown);
 
   const allPoints = [...knownResolved, ...newPoints].sort((a, b) => {
+    // Both pre-data: sort by date
     if (a.index === -1 && b.index === -1) return a.date.localeCompare(b.date);
+    // Pre-data points always come before resolved points
     if (a.index === -1) return -1;
-    if (b.index === -1) return -1;
+    if (b.index === -1) return 1;
+    // Both resolved: sort by candle index
     return a.index - b.index;
   });
 
