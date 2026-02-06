@@ -1,25 +1,62 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState, useRef, useEffect, useCallback } from 'react';
 import { OHLCV } from '@/lib/types';
 
 interface Props {
   candles: OHLCV[];
 }
 
+interface DayData {
+  date: string;
+  pctChange: number;
+  dayOfWeek: number;
+  open: number;
+  close: number;
+}
+
+interface ModalState {
+  day: DayData;
+  x: number;
+  y: number;
+}
+
+function formatPrice(p: number): string {
+  if (p >= 1000) return '$' + p.toLocaleString(undefined, { maximumFractionDigits: 0 });
+  if (p >= 1) return '$' + p.toFixed(2);
+  return '$' + p.toFixed(4);
+}
+
+function formatDate(dateStr: string): string {
+  const d = new Date(dateStr + 'T00:00:00Z');
+  return d.toLocaleDateString('en-US', {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    timeZone: 'UTC',
+  });
+}
+
 export default function HeatmapChart({ candles }: Props) {
+  const [modal, setModal] = useState<ModalState | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
+
   const { weeks, maxAbsChange } = useMemo(() => {
-    const data = candles.map((c) => {
-      const pctChange = ((c.close - c.open) / c.open) * 100;
+    const data: DayData[] = candles.map((c) => {
+      const pctChange = c.open > 0 ? ((c.close - c.open) / c.open) * 100 : 0;
       return {
         date: c.date,
         pctChange,
         dayOfWeek: new Date(c.date + 'T00:00:00Z').getUTCDay(),
+        open: c.open,
+        close: c.close,
       };
     });
 
-    const weeksArr: typeof data[] = [];
-    let currentWeek: typeof data = [];
+    const weeksArr: DayData[][] = [];
+    let currentWeek: DayData[] = [];
 
     data.forEach((d, i) => {
       currentWeek.push(d);
@@ -29,7 +66,11 @@ export default function HeatmapChart({ candles }: Props) {
       }
     });
 
-    const maxAbs = Math.max(...data.map((d) => Math.abs(d.pctChange)), 1);
+    let maxAbs = 1;
+    for (const d of data) {
+      const abs = Math.abs(d.pctChange);
+      if (abs > maxAbs) maxAbs = abs;
+    }
 
     return { weeks: weeksArr.slice(-52), maxAbsChange: maxAbs };
   }, [candles]);
@@ -42,21 +83,76 @@ export default function HeatmapChart({ candles }: Props) {
     return pct >= 0 ? `#00ff87${alpha}` : `#ff3b5c${alpha}`;
   }
 
+  const handleSquareClick = useCallback((day: DayData, e: React.MouseEvent) => {
+    const rect = containerRef.current?.getBoundingClientRect();
+    if (!rect) return;
+
+    // Position relative to container
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    setModal({ day, x, y });
+  }, []);
+
+  // Close modal when clicking outside
+  useEffect(() => {
+    if (!modal) return;
+
+    function handleClickOutside(e: MouseEvent) {
+      if (modalRef.current && !modalRef.current.contains(e.target as Node)) {
+        setModal(null);
+      }
+    }
+
+    // Delay to avoid immediate close from the same click
+    const timer = setTimeout(() => {
+      document.addEventListener('mousedown', handleClickOutside);
+    }, 10);
+
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [modal]);
+
+  // Compute modal position clamped within container
+  const modalStyle = useMemo(() => {
+    if (!modal || !containerRef.current) return {};
+    const containerWidth = containerRef.current.offsetWidth;
+    const modalWidth = 200;
+    const modalHeight = 120;
+
+    let left = modal.x - modalWidth / 2;
+    let top = modal.y - modalHeight - 12;
+
+    // Clamp horizontal
+    if (left < 4) left = 4;
+    if (left + modalWidth > containerWidth - 4) left = containerWidth - modalWidth - 4;
+
+    // If above would go off top, show below
+    if (top < 4) top = modal.y + 16;
+
+    return { left, top };
+  }, [modal]);
+
+  const isGreen = modal ? modal.day.pctChange >= 0 : false;
+
   return (
-    <div className="rounded-lg border border-border-default bg-bg-card p-2 sm:p-4">
+    <div ref={containerRef} className="relative rounded-lg border border-border-default bg-bg-card p-2 sm:p-4">
       <div className="mb-2 text-[9px] uppercase tracking-[0.15em] text-text-muted sm:mb-3 sm:text-[10px] sm:tracking-[0.2em]">
         Daily Returns Heatmap
       </div>
       <div className="overflow-x-auto">
-        <div className="flex gap-[2px]" style={{ minWidth: weeks.length * 12 }}>
+        <div className="flex justify-center gap-[2px]" style={{ minWidth: weeks.length * 12 }}>
           {weeks.map((week, wi) => (
             <div key={wi} className="flex flex-col gap-[2px]">
               {week.map((day) => (
                 <div
                   key={day.date}
-                  className="h-[10px] w-[10px] rounded-[1px] transition-all hover:scale-150 hover:z-10"
+                  className="h-[10px] w-[10px] cursor-pointer rounded-[1px] transition-all hover:scale-150 hover:z-10"
                   style={{ backgroundColor: getColor(day.pctChange) }}
                   title={`${day.date}: ${day.pctChange >= 0 ? '+' : ''}${day.pctChange.toFixed(2)}%`}
+                  onClick={(e) => handleSquareClick(day, e)}
                 />
               ))}
             </div>
@@ -76,6 +172,50 @@ export default function HeatmapChart({ candles }: Props) {
         </div>
         <span className="text-[8px] text-text-muted">+{maxAbsChange.toFixed(0)}%</span>
       </div>
+
+      {/* Click modal */}
+      {modal && (
+        <div
+          ref={modalRef}
+          className="absolute z-50 rounded-lg border bg-bg-card shadow-lg"
+          style={{
+            left: modalStyle.left,
+            top: modalStyle.top,
+            width: 200,
+            borderColor: isGreen ? '#00ff8730' : '#ff3b5c30',
+            boxShadow: `0 4px 20px ${isGreen ? '#00ff8715' : '#ff3b5c15'}`,
+          }}
+        >
+          <div className="p-2.5">
+            <div className="mb-1.5 text-[9px] font-semibold text-text-primary sm:text-[10px]">
+              {formatDate(modal.day.date)}
+            </div>
+            <div className="space-y-1">
+              <div className="flex items-center justify-between">
+                <span className="text-[8px] uppercase tracking-[0.1em] text-text-muted sm:text-[9px]">Open</span>
+                <span className="text-[9px] font-medium text-text-primary sm:text-[10px]">
+                  {formatPrice(modal.day.open)}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-[8px] uppercase tracking-[0.1em] text-text-muted sm:text-[9px]">Close</span>
+                <span className="text-[9px] font-medium text-text-primary sm:text-[10px]">
+                  {formatPrice(modal.day.close)}
+                </span>
+              </div>
+              <div className="flex items-center justify-between border-t border-border-default/50 pt-1">
+                <span className="text-[8px] uppercase tracking-[0.1em] text-text-muted sm:text-[9px]">Change</span>
+                <span
+                  className="text-[10px] font-bold sm:text-[11px]"
+                  style={{ color: isGreen ? '#00ff87' : '#ff3b5c' }}
+                >
+                  {modal.day.pctChange >= 0 ? '+' : ''}{modal.day.pctChange.toFixed(2)}%
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

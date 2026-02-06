@@ -186,43 +186,93 @@ export default function CyclePositionCard({ analysis, asset }: Props) {
             {/* Days from Peak / Days from Bottom */}
             <div className="grid grid-cols-2 gap-3 sm:gap-6">
               <div>
-                <div className="mb-0.5 text-[8px] uppercase tracking-[0.1em] text-text-muted/60 sm:mb-1 sm:text-[9px] sm:tracking-[0.15em]">
-                  Days from Peak
-                </div>
-                <div className="flex items-baseline gap-1 sm:gap-2">
-                  <span
-                    className="text-xl font-black font-[var(--font-display)] sm:text-3xl"
-                    style={{ color: '#ff3b5c' }}
-                  >
-                    {analysis.daysSincePeak.toLocaleString()}
-                  </span>
-                  <span className="text-[9px] text-text-muted sm:text-[11px]">days</span>
-                </div>
-                {analysis.currentPeak && (
-                  <div className="mt-0.5 text-[8px] text-text-muted sm:mt-1 sm:text-[10px]">
-                    Peak: ${analysis.currentPeak.price.toLocaleString(undefined, { maximumFractionDigits: 0 })} on{' '}
-                    {analysis.currentPeak.date}
-                  </div>
+                {analysis.currentPhase === 'bull' && analysis.projectedTop && analysis.projectedTop.daysUntil > 0 ? (
+                  <>
+                    <div className="mb-0.5 text-[8px] uppercase tracking-[0.1em] text-text-muted/60 sm:mb-1 sm:text-[9px] sm:tracking-[0.15em]">
+                      Est. Days to Top
+                    </div>
+                    <div className="flex items-baseline gap-1 sm:gap-2">
+                      <span
+                        className="text-xl font-black font-[var(--font-display)] sm:text-3xl"
+                        style={{ color: '#ff3b5c' }}
+                      >
+                        ~{analysis.projectedTop.daysUntil.toLocaleString()}
+                      </span>
+                      <span className="text-[9px] text-text-muted sm:text-[11px]">days</span>
+                    </div>
+                    <div className="mt-0.5 text-[8px] text-text-muted sm:mt-1 sm:text-[10px]">
+                      Est. {formatProjectedDate(analysis.projectedTop.projectedDate)}
+                      <span className="hidden sm:inline">
+                        {' · '}based on {analysis.projectedTop.basedOnCycles} cycles
+                      </span>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="mb-0.5 text-[8px] uppercase tracking-[0.1em] text-text-muted/60 sm:mb-1 sm:text-[9px] sm:tracking-[0.15em]">
+                      Days from Peak
+                    </div>
+                    <div className="flex items-baseline gap-1 sm:gap-2">
+                      <span
+                        className="text-xl font-black font-[var(--font-display)] sm:text-3xl"
+                        style={{ color: '#ff3b5c' }}
+                      >
+                        {analysis.daysSincePeak.toLocaleString()}
+                      </span>
+                      <span className="text-[9px] text-text-muted sm:text-[11px]">days</span>
+                    </div>
+                    {analysis.currentPeak && (
+                      <div className="mt-0.5 text-[8px] text-text-muted sm:mt-1 sm:text-[10px]">
+                        Peak: ${analysis.currentPeak.price.toLocaleString(undefined, { maximumFractionDigits: 0 })} on{' '}
+                        {analysis.currentPeak.date}
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
               <div>
-                <div className="mb-0.5 text-[8px] uppercase tracking-[0.1em] text-text-muted/60 sm:mb-1 sm:text-[9px] sm:tracking-[0.15em]">
-                  Days from Bottom
-                </div>
-                <div className="flex items-baseline gap-1 sm:gap-2">
-                  <span
-                    className="text-xl font-black font-[var(--font-display)] sm:text-3xl"
-                    style={{ color: '#00ff87' }}
-                  >
-                    {analysis.daysSinceTrough.toLocaleString()}
-                  </span>
-                  <span className="text-[9px] text-text-muted sm:text-[11px]">days</span>
-                </div>
-                {analysis.currentTrough && (
-                  <div className="mt-0.5 text-[8px] text-text-muted sm:mt-1 sm:text-[10px]">
-                    Bottom: ${analysis.currentTrough.price.toLocaleString(undefined, { maximumFractionDigits: 0 })} on{' '}
-                    {analysis.currentTrough.date}
-                  </div>
+                {analysis.currentPhase === 'bear' && analysis.projectedBottom && analysis.projectedBottom.daysUntil > 0 ? (
+                  <>
+                    <div className="mb-0.5 text-[8px] uppercase tracking-[0.1em] text-text-muted/60 sm:mb-1 sm:text-[9px] sm:tracking-[0.15em]">
+                      Est. Days to Bottom
+                    </div>
+                    <div className="flex items-baseline gap-1 sm:gap-2">
+                      <span
+                        className="text-xl font-black font-[var(--font-display)] sm:text-3xl"
+                        style={{ color: '#00ff87' }}
+                      >
+                        ~{analysis.projectedBottom.daysUntil.toLocaleString()}
+                      </span>
+                      <span className="text-[9px] text-text-muted sm:text-[11px]">days</span>
+                    </div>
+                    <div className="mt-0.5 text-[8px] text-text-muted sm:mt-1 sm:text-[10px]">
+                      Est. {formatProjectedDate(analysis.projectedBottom.projectedDate)}
+                      <span className="hidden sm:inline">
+                        {' · '}based on {analysis.projectedBottom.basedOnCycles} cycles
+                      </span>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="mb-0.5 text-[8px] uppercase tracking-[0.1em] text-text-muted/60 sm:mb-1 sm:text-[9px] sm:tracking-[0.15em]">
+                      Days from Bottom
+                    </div>
+                    <div className="flex items-baseline gap-1 sm:gap-2">
+                      <span
+                        className="text-xl font-black font-[var(--font-display)] sm:text-3xl"
+                        style={{ color: '#00ff87' }}
+                      >
+                        {analysis.daysSinceTrough.toLocaleString()}
+                      </span>
+                      <span className="text-[9px] text-text-muted sm:text-[11px]">days</span>
+                    </div>
+                    {analysis.currentTrough && (
+                      <div className="mt-0.5 text-[8px] text-text-muted sm:mt-1 sm:text-[10px]">
+                        Bottom: ${analysis.currentTrough.price.toLocaleString(undefined, { maximumFractionDigits: 0 })} on{' '}
+                        {analysis.currentTrough.date}
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             </div>

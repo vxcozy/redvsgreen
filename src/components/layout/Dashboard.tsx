@@ -140,7 +140,7 @@ export default function Dashboard() {
       {/* Row 6: Conditional panels */}
       <div className="grid grid-cols-1 gap-2 sm:gap-4 md:grid-cols-2">
         {state.overlays.rsi && <RSIChart data={rsi} />}
-        {state.overlays.volume && <VolumeChart candles={candles} />}
+        {state.overlays.volume && <VolumeChart candles={candles} asset={state.asset} timeRange={state.timeRange} />}
       </div>
 
       {state.overlays.fearGreed && fearGreedData.length > 0 && (
