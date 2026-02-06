@@ -170,7 +170,70 @@ function detectNewPoints(
     }
   }
 
-  return detected;
+  // ── Post-detection sanity check ────────────────────────────────
+  // Remove detected points that create impossible cycle transitions.
+  // E.g. a "peak" at $2,119 followed by a "trough" at $2,223 means
+  // the intermediate detection was a false positive (just a local
+  // bounce within a larger cycle, not a real cycle inflection).
+  return sanitizeDetectedPoints(detected, lastKnownPoint);
+}
+
+/**
+ * Walk the detected points (paired with the last known point) and
+ * remove any pair that creates an impossible cycle leg:
+ *   - A peak→trough where trough.price >= peak.price (bear goes up)
+ *   - A trough→peak where peak.price <= trough.price  (bull goes down)
+ */
+function sanitizeDetectedPoints(
+  detected: CyclePoint[],
+  lastKnown: CyclePoint | null
+): CyclePoint[] {
+  if (detected.length === 0) return detected;
+
+  // Build full sequence: [lastKnown, ...detected] for pairwise validation
+  const sequence: CyclePoint[] = lastKnown ? [lastKnown, ...detected] : [...detected];
+  const toRemove = new Set<number>(); // indices in `detected`
+
+  // Check each consecutive pair in the sequence
+  for (let i = 0; i < sequence.length - 1; i++) {
+    const from = sequence[i];
+    const to = sequence[i + 1];
+    if (from.type === to.type) continue; // same type — skip
+
+    const isBull = from.type === 'trough';
+    if (isBull && to.price <= from.price) {
+      // Bull phase where "peak" is ≤ trough — both detected points are bad
+      // (from may be lastKnown, so only mark 'to' for removal)
+      const detIdx = detected.indexOf(to);
+      if (detIdx >= 0) toRemove.add(detIdx);
+    } else if (!isBull && to.price >= from.price) {
+      // Bear phase where "trough" is ≥ peak — false trough
+      const detIdx = detected.indexOf(to);
+      if (detIdx >= 0) toRemove.add(detIdx);
+    }
+  }
+
+  if (toRemove.size === 0) return detected;
+
+  // When we remove a point, its partner in the pair is also suspect.
+  // The simplest safe approach: if any detected point is invalid,
+  // remove ALL detected points that were part of invalid pairs.
+  // This prevents orphaned peaks/troughs from creating worse problems.
+  //
+  // Walk again: if either side of a pair is in toRemove, mark both.
+  const detectedOffset = lastKnown ? 1 : 0;
+  for (let i = 0; i < sequence.length - 1; i++) {
+    const fromDetIdx = i - detectedOffset;
+    const toDetIdx = (i + 1) - detectedOffset;
+
+    const fromMarked = fromDetIdx >= 0 && toRemove.has(fromDetIdx);
+    const toMarked = toDetIdx >= 0 && toRemove.has(toDetIdx);
+
+    if (fromMarked && toDetIdx >= 0) toRemove.add(toDetIdx);
+    if (toMarked && fromDetIdx >= 0) toRemove.add(fromDetIdx);
+  }
+
+  return detected.filter((_, idx) => !toRemove.has(idx));
 }
 
 // ── Find the running (unconfirmed) peak/trough since last cycle point ──
