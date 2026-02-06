@@ -25,6 +25,12 @@ export function useBinanceKlines(asset: Asset, timeRange: string) {
       })
       .then((raw) => {
         if (cancelled) return;
+        if (!Array.isArray(raw)) {
+          throw new Error(raw?.error || 'Invalid response format');
+        }
+        if (raw.length === 0) {
+          throw new Error('No candle data returned');
+        }
         const transformed = transformKlines(raw);
         setData(transformed);
         setLoading(false);

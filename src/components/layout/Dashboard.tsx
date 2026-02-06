@@ -19,7 +19,7 @@ import VolumeChart from '@/components/charts/VolumeChart';
 import FearGreedChart from '@/components/charts/FearGreedChart';
 import StreakHistogram from '@/components/charts/StreakHistogram';
 import HeatmapChart from '@/components/charts/HeatmapChart';
-import ComparisonChart from '@/components/charts/ComparisonChart';
+import LazyComparisonChart from '@/components/charts/LazyComparisonChart';
 import CycleTimelineChart from '@/components/charts/CycleTimelineChart';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import SkeletonCard from '@/components/ui/SkeletonCard';
@@ -33,11 +33,6 @@ export default function Dashboard() {
 
   // Cycle analysis (always uses ALL-time data)
   const { cycleAnalysis, allCandles: cycleCandles } = useCycleAnalysis(state.asset);
-
-  // Comparison data
-  const compAsset = state.asset === 'BTC' ? 'ETH' : 'BTC';
-  const { data: compCandles } = useBinanceKlines(compAsset, state.timeRange);
-  const { stats: compStats } = useStreakAnalysis(compCandles);
 
   if (error) {
     return (
@@ -64,10 +59,10 @@ export default function Dashboard() {
     );
   }
 
-  const greenRedRatio = (
-    (stats.totalGreenDays / (stats.totalGreenDays + stats.totalRedDays)) *
-    100
-  ).toFixed(1);
+  const totalDays = stats.totalGreenDays + stats.totalRedDays;
+  const greenRedRatio = totalDays > 0
+    ? ((stats.totalGreenDays / totalDays) * 100).toFixed(1)
+    : '0.0';
 
   return (
     <div className="mx-auto max-w-[1440px] space-y-3 px-3 py-4 sm:space-y-4 sm:px-4 sm:py-6 md:px-6">
@@ -170,9 +165,10 @@ export default function Dashboard() {
       {state.overlays.heatmap && <HeatmapChart candles={candles} />}
 
       {state.overlays.btcEthComparison && (
-        <ComparisonChart
-          btcStats={state.asset === 'BTC' ? stats : compStats}
-          ethStats={state.asset === 'ETH' ? stats : compStats}
+        <LazyComparisonChart
+          asset={state.asset}
+          currentStats={stats}
+          timeRange={state.timeRange}
         />
       )}
 

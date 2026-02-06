@@ -109,7 +109,9 @@ async function fetchDeFiLlama(
       if (lastTs <= currentStart) break; // no progress, stop
       currentStart = lastTs + 86400; // +1 day
 
-      if (prices.length < DEFILLAMA_SPAN * 0.8) break; // probably last page
+      // DeFiLlama returns fewer results than span requested (e.g. 398 for span=500).
+      // Only stop if we got very few results, indicating we've truly reached the end.
+      if (prices.length < 10) break;
     } catch {
       return null;
     }

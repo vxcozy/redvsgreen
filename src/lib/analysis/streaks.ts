@@ -29,7 +29,9 @@ export function detectStreaks(candles: OHLCV[]): Streak[] {
         startDate: candles[streakStart].date,
         endDate: candles[endIndex].date,
         length: endIndex - streakStart + 1,
-        totalPercentChange: ((endPrice - startPrice) / startPrice) * 100,
+        totalPercentChange: startPrice > 0
+          ? ((endPrice - startPrice) / startPrice) * 100
+          : 0,
         avgDailyVolume:
           streakCandles.reduce((sum, c) => sum + c.volume, 0) /
           streakCandles.length,

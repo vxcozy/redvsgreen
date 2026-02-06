@@ -112,10 +112,13 @@ function detectNewPoints(
         }
       }
       if (isLocalMax) {
-        const windowLow = Math.min(
-          ...candles.slice(windowStart, windowEnd + 1).map((c) => c.low)
-        );
-        const prominence = (candles[i].high - windowLow) / windowLow;
+        let windowLow = candles[windowStart].low;
+        for (let j = windowStart + 1; j <= windowEnd; j++) {
+          if (candles[j].low < windowLow) windowLow = candles[j].low;
+        }
+        const prominence = windowLow > 0
+          ? (candles[i].high - windowLow) / windowLow
+          : 0;
         if (prominence >= PROMINENCE_THRESHOLD) {
           const lastDetected = detected[detected.length - 1];
           const lastPoint = lastDetected || lastKnownPoint;
@@ -142,10 +145,13 @@ function detectNewPoints(
         }
       }
       if (isLocalMin) {
-        const windowHigh = Math.max(
-          ...candles.slice(windowStart, windowEnd + 1).map((c) => c.high)
-        );
-        const prominence = (windowHigh - candles[i].low) / candles[i].low;
+        let windowHigh = candles[windowStart].high;
+        for (let j = windowStart + 1; j <= windowEnd; j++) {
+          if (candles[j].high > windowHigh) windowHigh = candles[j].high;
+        }
+        const prominence = candles[i].low > 0
+          ? (windowHigh - candles[i].low) / candles[i].low
+          : 0;
         if (prominence >= PROMINENCE_THRESHOLD) {
           const lastDetected = detected[detected.length - 1];
           const lastPoint = lastDetected || lastKnownPoint;
@@ -220,13 +226,17 @@ export function buildCycles(points: CyclePoint[]): Cycle[] {
   for (let i = 0; i < points.length - 1; i++) {
     const from = points[i];
     const to = points[i + 1];
+
+    // Skip invalid adjacent same-type points (data corruption guard)
+    if (from.type === to.type) continue;
+
     const duration = daysBetween(from.date, to.date);
     const pctChange = from.price > 0
       ? ((to.price - from.price) / from.price) * 100
       : 0;
 
     const direction: 'bull' | 'bear' =
-      from.type === 'trough' && to.type === 'peak' ? 'bull' : 'bear';
+      from.type === 'trough' ? 'bull' : 'bear';
 
     cycles.push({
       from,
@@ -560,6 +570,9 @@ export function computeCycleAnalysis(
     bearCycles.length
   );
 
+  // Final safety: clamp any NaN/Infinity values
+  const safe = (v: number, fallback = 0) => (isFinite(v) ? v : fallback);
+
   return {
     cycles,
     allPoints: extendedPoints,
@@ -567,12 +580,12 @@ export function computeCycleAnalysis(
     currentTrough,
     daysSincePeak: daysBetween(today, currentPeak.date),
     daysSinceTrough: daysBetween(today, currentTrough.date),
-    avgBullDuration: Math.round(avgBullDuration),
-    avgBearDuration: Math.round(avgBearDuration),
-    avgBullReturn,
-    avgBearDrawdown,
+    avgBullDuration: Math.round(safe(avgBullDuration)),
+    avgBearDuration: Math.round(safe(avgBearDuration)),
+    avgBullReturn: safe(avgBullReturn),
+    avgBearDrawdown: safe(avgBearDrawdown),
     currentPhase,
-    phaseProgress,
+    phaseProgress: safe(phaseProgress),
     projectedTop,
     projectedBottom,
   };
