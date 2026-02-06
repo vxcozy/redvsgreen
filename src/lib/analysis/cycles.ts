@@ -395,45 +395,74 @@ export function computeCycleAnalysis(
       : 0;
 
   const today = candles[candles.length - 1].date;
+  const todayClose = candles[candles.length - 1].close;
 
-  // ── Current cycle: determine phase from last confirmed point ──
+  // ── Smart phase detection ──
+  // Don't blindly trust the last confirmed cycle point type.
+  // Instead, find the running peak since the last trough (or vice versa)
+  // and check if a significant drawdown/rally has occurred.
+  const BEAR_THRESHOLD = 0.25; // >25% drawdown from peak = bear started
+
   const lastConfirmedPoint = allPoints[allPoints.length - 1];
-  const currentPhase: 'bull' | 'bear' =
+  const naivePhase: 'bull' | 'bear' =
     lastConfirmedPoint.type === 'trough' ? 'bull' : 'bear';
 
-  // ── Current cycle peak/trough ──
-  // Find the running (unconfirmed) peak since the last trough,
-  // or the running trough since the last peak.
-  // "Days from Peak" = days since highest price in current bull run
-  // "Days from Bottom" = days since the cycle trough that started this run
   let currentPeak: CyclePoint;
   let currentTrough: CyclePoint;
+  let currentPhase: 'bull' | 'bear';
+  let phaseAnchor: CyclePoint; // The point the current phase is measured from
 
-  if (currentPhase === 'bull') {
-    // We're in a bull run from the last confirmed trough
-    // The "bottom" is the last confirmed trough
-    // The "peak" is the highest price since that trough (running ATH of this cycle)
-    currentTrough = lastConfirmedPoint;
-    currentPeak = findRunningPeakSince(candles, lastConfirmedPoint.date);
+  if (naivePhase === 'bull') {
+    // Last confirmed point is a trough — nominally in a bull.
+    // But check if a significant drawdown has occurred from the running peak.
+    const runningPeak = findRunningPeakSince(candles, lastConfirmedPoint.date);
+    const drawdownFromPeak = (runningPeak.price - todayClose) / runningPeak.price;
+
+    if (drawdownFromPeak >= BEAR_THRESHOLD) {
+      // We've topped and entered a bear — the running peak is the cycle top
+      currentPhase = 'bear';
+      currentPeak = runningPeak;
+      currentTrough = findRunningTroughSince(candles, runningPeak.date);
+      phaseAnchor = runningPeak; // Bear started from the peak
+    } else {
+      // Still in bull territory
+      currentPhase = 'bull';
+      currentTrough = lastConfirmedPoint;
+      currentPeak = runningPeak;
+      phaseAnchor = lastConfirmedPoint; // Bull started from the trough
+    }
   } else {
-    // We're in a bear from the last confirmed peak
-    // The "peak" is the last confirmed peak
-    // The "trough" is the lowest price since that peak (running low of this cycle)
-    currentPeak = lastConfirmedPoint;
-    currentTrough = findRunningTroughSince(candles, lastConfirmedPoint.date);
+    // Last confirmed point is a peak — nominally in a bear.
+    // Check if a significant rally has occurred from the running trough.
+    const runningTrough = findRunningTroughSince(candles, lastConfirmedPoint.date);
+    const rallyFromTrough = (todayClose - runningTrough.price) / runningTrough.price;
+
+    if (rallyFromTrough >= BEAR_THRESHOLD) {
+      // We've bottomed and entered a bull
+      currentPhase = 'bull';
+      currentTrough = runningTrough;
+      currentPeak = findRunningPeakSince(candles, runningTrough.date);
+      phaseAnchor = runningTrough;
+    } else {
+      // Still in bear territory
+      currentPhase = 'bear';
+      currentPeak = lastConfirmedPoint;
+      currentTrough = runningTrough;
+      phaseAnchor = lastConfirmedPoint;
+    }
   }
 
   // Phase progress: how far into the avg cycle duration we are
-  const daysSinceLastPoint = daysBetween(today, lastConfirmedPoint.date);
+  const daysSincePhaseStart = daysBetween(today, phaseAnchor.date);
   const avgDuration = currentPhase === 'bull' ? avgBullDuration : avgBearDuration;
   const phaseProgress = avgDuration > 0
-    ? Math.min(daysSinceLastPoint / avgDuration, 1.5)
+    ? Math.min(daysSincePhaseStart / avgDuration, 1.5)
     : 0;
 
-  // Compute projected cycle top/bottom dates
+  // Compute projected cycle top/bottom dates from the phase anchor
   const { projectedTop, projectedBottom } = computeProjections(
     currentPhase,
-    lastConfirmedPoint,
+    phaseAnchor,
     today,
     avgBullDuration,
     avgBearDuration,
