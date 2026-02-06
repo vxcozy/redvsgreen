@@ -377,8 +377,19 @@ export function computeCycleAnalysis(
 
   // Build completed cycles from confirmed historical points
   const historicalCycles = buildCycles(allPoints);
-  const bullCycles = historicalCycles.filter((c) => c.direction === 'bull');
-  const bearCycles = historicalCycles.filter((c) => c.direction === 'bear');
+
+  // Exclude Cycle 1 (pre-Binance era, both endpoints index === -1).
+  // The $2→$1,163 era has wildly different durations and returns that
+  // aren't representative of modern ~4yr halving-driven cycles.
+  // The established pattern from Cycles 2-3:
+  //   Bull (ATL → ATH): ~1,064 days
+  //   Bear (ATH → ATL): ~364 days
+  const modernCycles = historicalCycles.filter(
+    (c) => !(c.from.index === -1 && c.to.index === -1)
+  );
+
+  const bullCycles = modernCycles.filter((c) => c.direction === 'bull');
+  const bearCycles = modernCycles.filter((c) => c.direction === 'bear');
 
   const avgBullDuration =
     bullCycles.length > 0
@@ -396,8 +407,8 @@ export function computeCycleAnalysis(
     (c) => isFinite(c.percentChange) && c.percentChange !== 0
   );
 
-  // Use median instead of mean — early cycles (e.g. $2→$1,163 = +56,632%)
-  // wildly skew the average and aren't representative of modern markets.
+  // Use median instead of mean for returns — even with Cycle 1 excluded,
+  // early cycles can still skew averages vs modern market behaviour.
   const median = (arr: number[]): number => {
     if (arr.length === 0) return 0;
     const sorted = [...arr].sort((a, b) => a - b);
