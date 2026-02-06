@@ -64,6 +64,9 @@ export default function Dashboard() {
     ? ((stats.totalGreenDays / totalDays) * 100).toFixed(1)
     : '0.0';
 
+  const greenStreakCount = stats.allStreaks.filter((s) => s.type === 'green').length;
+  const redStreakCount = stats.allStreaks.filter((s) => s.type === 'red').length;
+
   return (
     <div className="mx-auto max-w-[1440px] space-y-3 px-3 py-4 sm:space-y-4 sm:px-4 sm:py-6 md:px-6">
       {/* Row 1: Stats cards */}
@@ -85,6 +88,7 @@ export default function Dashboard() {
           label="Green Day Ratio"
           value={`${greenRedRatio}%`}
           subtext={`${stats.totalGreenDays} green / ${stats.totalRedDays} red`}
+          variant={parseFloat(greenRedRatio) >= 50 ? 'green' : 'red'}
         />
       </div>
 
@@ -105,7 +109,8 @@ export default function Dashboard() {
         <StatsCard
           label="Total Streaks"
           value={`${stats.allStreaks.length}`}
-          subtext={`${stats.allStreaks.filter((s) => s.type === 'green').length} green / ${stats.allStreaks.filter((s) => s.type === 'red').length} red`}
+          subtext={`${greenStreakCount} green / ${redStreakCount} red`}
+          variant={greenStreakCount > redStreakCount ? 'green' : greenStreakCount < redStreakCount ? 'red' : 'neutral'}
         />
         <StatsCard
           label="Current % Change"

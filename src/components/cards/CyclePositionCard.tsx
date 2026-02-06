@@ -509,7 +509,7 @@ export default function CyclePositionCard({ analysis, asset }: Props) {
             <div className="text-[8px] uppercase tracking-[0.05em] text-text-muted/60 sm:text-[9px] sm:tracking-[0.1em]">
               Avg Bull Run
             </div>
-            <div className="mt-0.5 text-xs font-semibold text-text-primary sm:text-sm">
+            <div className="mt-0.5 text-xs font-semibold sm:text-sm" style={{ color: '#00ff87' }}>
               {formatDays(analysis.avgBullDuration)}
             </div>
           </div>
@@ -517,7 +517,7 @@ export default function CyclePositionCard({ analysis, asset }: Props) {
             <div className="text-[8px] uppercase tracking-[0.05em] text-text-muted/60 sm:text-[9px] sm:tracking-[0.1em]">
               Avg Bear Phase
             </div>
-            <div className="mt-0.5 text-xs font-semibold text-text-primary sm:text-sm">
+            <div className="mt-0.5 text-xs font-semibold sm:text-sm" style={{ color: '#ff3b5c' }}>
               {formatDays(analysis.avgBearDuration)}
             </div>
           </div>
