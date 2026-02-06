@@ -400,15 +400,21 @@ export function computeCycleAnalysis(
       ? bearCycles.reduce((s, c) => s + c.durationDays, 0) / bearCycles.length
       : 0;
 
-  const validBullCycles = bullCycles.filter(
-    (c) => isFinite(c.percentChange) && c.percentChange !== 0
+  // For return/drawdown stats, only use cycles where BOTH endpoints have
+  // real candle data. Cycle 2 bull ($152→$19,783) has a pre-data start
+  // point with a hardcoded price, giving +12,838% — still not representative
+  // of the modern era. Only Cycle 3+ (fully within Binance data) are reliable.
+  const fullDataCycles = modernCycles.filter(
+    (c) => c.from.index !== -1 && c.to.index !== -1
   );
-  const validBearCycles = bearCycles.filter(
-    (c) => isFinite(c.percentChange) && c.percentChange !== 0
+  const validBullCycles = fullDataCycles.filter(
+    (c) => c.direction === 'bull' && isFinite(c.percentChange) && c.percentChange !== 0
+  );
+  const validBearCycles = fullDataCycles.filter(
+    (c) => c.direction === 'bear' && isFinite(c.percentChange) && c.percentChange !== 0
   );
 
-  // Use median instead of mean for returns — even with Cycle 1 excluded,
-  // early cycles can still skew averages vs modern market behaviour.
+  // Use median for returns to resist outliers.
   const median = (arr: number[]): number => {
     if (arr.length === 0) return 0;
     const sorted = [...arr].sort((a, b) => a - b);
