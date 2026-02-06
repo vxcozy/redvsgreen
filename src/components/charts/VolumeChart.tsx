@@ -28,9 +28,26 @@ export default function VolumeChart({ candles }: Props) {
 
   const data = sampled.map((c) => ({
     date: c.date,
-    volume: c.quoteVolume,
+    // Prefer quoteVolume (USD-denominated), fall back to base volume
+    volume: c.quoteVolume > 0 ? c.quoteVolume : c.volume,
     isGreen: c.close >= c.open,
   }));
+
+  // Check if we actually have volume data (DeFiLlama fallback has none)
+  const hasVolume = data.some((d) => d.volume > 0);
+
+  if (!hasVolume) {
+    return (
+      <div className="rounded-lg border border-border-default bg-bg-card p-2 sm:p-3">
+        <div className="mb-1.5 px-1 text-[9px] uppercase tracking-[0.15em] text-text-muted sm:mb-2 sm:text-[10px] sm:tracking-[0.2em]">
+          Volume
+        </div>
+        <div className="flex h-[140px] items-center justify-center text-[10px] text-text-muted/60 sm:h-[180px] sm:text-[11px]">
+          Volume data unavailable for current data source
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="rounded-lg border border-border-default bg-bg-card p-2 sm:p-3">

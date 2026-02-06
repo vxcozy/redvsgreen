@@ -173,7 +173,13 @@ export default function CycleTimelineChart({ candles, analysis, asset }: Props) 
                   year: 'numeric',
                 });
               }}
-              formatter={(val) => [formatPrice(Number(val)), 'Price']}
+              formatter={(val, name) => {
+                const num = Number(val);
+                if (!isFinite(num) || num === 0) return null;
+                // Only show one "Price" entry — skip peak/trough scatter keys
+                if (name === 'peakPrice' || name === 'troughPrice') return null;
+                return [formatPrice(num), 'Price'];
+              }}
             />
 
             {/* Vertical reference lines for peaks/troughs */}
