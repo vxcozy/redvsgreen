@@ -523,7 +523,7 @@ export default function CyclePositionCard({ analysis, asset }: Props) {
           </div>
           <div>
             <div className="text-[8px] uppercase tracking-[0.05em] text-text-muted/60 sm:text-[9px] sm:tracking-[0.1em]">
-              Avg Bull Return
+              Median Bull Return
             </div>
             <div className="mt-0.5 text-xs font-semibold sm:text-sm" style={{ color: '#00ff87' }}>
               {formatPct(analysis.avgBullReturn)}
@@ -531,7 +531,7 @@ export default function CyclePositionCard({ analysis, asset }: Props) {
           </div>
           <div>
             <div className="text-[8px] uppercase tracking-[0.05em] text-text-muted/60 sm:text-[9px] sm:tracking-[0.1em]">
-              Avg Bear Drawdown
+              Median Bear Drawdown
             </div>
             <div className="mt-0.5 text-xs font-semibold sm:text-sm" style={{ color: '#ff3b5c' }}>
               {formatPct(analysis.avgBearDrawdown)}

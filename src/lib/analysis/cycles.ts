@@ -395,14 +395,20 @@ export function computeCycleAnalysis(
   const validBearCycles = bearCycles.filter(
     (c) => isFinite(c.percentChange) && c.percentChange !== 0
   );
-  const avgBullReturn =
-    validBullCycles.length > 0
-      ? validBullCycles.reduce((s, c) => s + c.percentChange, 0) / validBullCycles.length
-      : 0;
-  const avgBearDrawdown =
-    validBearCycles.length > 0
-      ? validBearCycles.reduce((s, c) => s + c.percentChange, 0) / validBearCycles.length
-      : 0;
+
+  // Use median instead of mean — early cycles (e.g. $2→$1,163 = +56,632%)
+  // wildly skew the average and aren't representative of modern markets.
+  const median = (arr: number[]): number => {
+    if (arr.length === 0) return 0;
+    const sorted = [...arr].sort((a, b) => a - b);
+    const mid = Math.floor(sorted.length / 2);
+    return sorted.length % 2 === 0
+      ? (sorted[mid - 1] + sorted[mid]) / 2
+      : sorted[mid];
+  };
+
+  const avgBullReturn = median(validBullCycles.map((c) => c.percentChange));
+  const avgBearDrawdown = median(validBearCycles.map((c) => c.percentChange));
 
   const today = candles[candles.length - 1].date;
   const todayClose = candles[candles.length - 1].close;
