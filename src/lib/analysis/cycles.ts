@@ -365,10 +365,10 @@ export function computeCycleAnalysis(
     };
   }
 
-  // Build completed cycles for historical averages
-  const cycles = buildCycles(allPoints);
-  const bullCycles = cycles.filter((c) => c.direction === 'bull');
-  const bearCycles = cycles.filter((c) => c.direction === 'bear');
+  // Build completed cycles from confirmed historical points
+  const historicalCycles = buildCycles(allPoints);
+  const bullCycles = historicalCycles.filter((c) => c.direction === 'bull');
+  const bearCycles = historicalCycles.filter((c) => c.direction === 'bear');
 
   const avgBullDuration =
     bullCycles.length > 0
@@ -452,6 +452,96 @@ export function computeCycleAnalysis(
     }
   }
 
+  // ── Append current (unconfirmed) cycle segments ──
+  // The historical cycles only go up to the last confirmed point.
+  // We need to extend them with the current bull and bear legs
+  // so the timeline chart and table show the full picture.
+  const cycles = [...historicalCycles];
+  const extendedPoints = [...allPoints];
+
+  if (naivePhase === 'bull') {
+    // Last confirmed point is a trough. Add bull leg: trough → running peak
+    const bullLeg: Cycle = {
+      from: lastConfirmedPoint,
+      to: currentPeak,
+      durationDays: daysBetween(lastConfirmedPoint.date, currentPeak.date),
+      priceChange: currentPeak.price - lastConfirmedPoint.price,
+      percentChange: lastConfirmedPoint.price > 0
+        ? ((currentPeak.price - lastConfirmedPoint.price) / lastConfirmedPoint.price) * 100
+        : 0,
+      direction: 'bull',
+    };
+    cycles.push(bullLeg);
+
+    // Add peak to extended points if not already there
+    if (!extendedPoints.some((p) => p.date === currentPeak.date && p.type === 'peak')) {
+      extendedPoints.push(currentPeak);
+    }
+
+    if (currentPhase === 'bear') {
+      // Also add bear leg: running peak → running trough
+      const bearLeg: Cycle = {
+        from: currentPeak,
+        to: currentTrough,
+        durationDays: daysBetween(currentPeak.date, currentTrough.date),
+        priceChange: currentTrough.price - currentPeak.price,
+        percentChange: currentPeak.price > 0
+          ? ((currentTrough.price - currentPeak.price) / currentPeak.price) * 100
+          : 0,
+        direction: 'bear',
+      };
+      cycles.push(bearLeg);
+
+      if (!extendedPoints.some((p) => p.date === currentTrough.date && p.type === 'trough')) {
+        extendedPoints.push(currentTrough);
+      }
+    }
+  } else {
+    // Last confirmed point is a peak. Add bear leg: peak → running trough
+    const bearLeg: Cycle = {
+      from: lastConfirmedPoint,
+      to: currentTrough,
+      durationDays: daysBetween(lastConfirmedPoint.date, currentTrough.date),
+      priceChange: currentTrough.price - lastConfirmedPoint.price,
+      percentChange: lastConfirmedPoint.price > 0
+        ? ((currentTrough.price - lastConfirmedPoint.price) / lastConfirmedPoint.price) * 100
+        : 0,
+      direction: 'bear',
+    };
+    cycles.push(bearLeg);
+
+    if (!extendedPoints.some((p) => p.date === currentTrough.date && p.type === 'trough')) {
+      extendedPoints.push(currentTrough);
+    }
+
+    if (currentPhase === 'bull') {
+      // Also add bull leg: running trough → running peak
+      const bullLeg: Cycle = {
+        from: currentTrough,
+        to: currentPeak,
+        durationDays: daysBetween(currentTrough.date, currentPeak.date),
+        priceChange: currentPeak.price - currentTrough.price,
+        percentChange: currentTrough.price > 0
+          ? ((currentPeak.price - currentTrough.price) / currentTrough.price) * 100
+          : 0,
+        direction: 'bull',
+      };
+      cycles.push(bullLeg);
+
+      if (!extendedPoints.some((p) => p.date === currentPeak.date && p.type === 'peak')) {
+        extendedPoints.push(currentPeak);
+      }
+    }
+  }
+
+  // Sort extended points for the timeline chart
+  extendedPoints.sort((a, b) => {
+    if (a.index === -1 && b.index === -1) return a.date.localeCompare(b.date);
+    if (a.index === -1) return -1;
+    if (b.index === -1) return 1;
+    return a.index - b.index;
+  });
+
   // Phase progress: how far into the avg cycle duration we are
   const daysSincePhaseStart = daysBetween(today, phaseAnchor.date);
   const avgDuration = currentPhase === 'bull' ? avgBullDuration : avgBearDuration;
@@ -472,7 +562,7 @@ export function computeCycleAnalysis(
 
   return {
     cycles,
-    allPoints,
+    allPoints: extendedPoints,
     currentPeak,
     currentTrough,
     daysSincePeak: daysBetween(today, currentPeak.date),
