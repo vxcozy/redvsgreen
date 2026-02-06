@@ -12,6 +12,7 @@ export function useBinanceKlines(asset: Asset, timeRange: string) {
 
   useEffect(() => {
     let cancelled = false;
+    setData([]);       // Clear stale data from previous asset/timeRange
     setLoading(true);
     setError(null);
 

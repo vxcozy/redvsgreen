@@ -14,9 +14,9 @@ export function useCycleAnalysis(asset: Asset) {
   const { data: allCandles, loading } = useBinanceKlines(asset, 'ALL');
 
   const cycleAnalysis: CycleAnalysis | null = useMemo(() => {
-    if (allCandles.length === 0) return null;
+    if (loading || allCandles.length === 0) return null;
     return computeCycleAnalysis(allCandles, asset);
-  }, [allCandles, asset]);
+  }, [allCandles, asset, loading]);
 
   return { cycleAnalysis, allCandles, loading };
 }
