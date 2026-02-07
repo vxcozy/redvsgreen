@@ -23,7 +23,7 @@ export async function GET() {
     });
   } catch (err) {
     return NextResponse.json(
-      { error: 'Failed to fetch Fear & Greed data', details: String(err) },
+      { error: 'Failed to fetch Fear & Greed data' },
       { status: 500 }
     );
   }

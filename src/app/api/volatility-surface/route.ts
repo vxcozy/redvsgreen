@@ -60,8 +60,14 @@ function parseStrike(instrumentName: string): number | null {
   return parseFloat(parts[2]);
 }
 
+const ALLOWED_CURRENCIES = new Set(['BTC', 'ETH']);
+
 export async function GET(req: NextRequest) {
   const currency = req.nextUrl.searchParams.get('currency') || 'BTC';
+
+  if (!ALLOWED_CURRENCIES.has(currency)) {
+    return NextResponse.json({ error: 'Invalid currency' }, { status: 400 });
+  }
 
   try {
     const url = `https://www.deribit.com/api/v2/public/get_book_summary_by_currency?currency=${currency}&kind=option`;
@@ -150,7 +156,6 @@ export async function GET(req: NextRequest) {
       },
     });
   } catch (err) {
-    console.error('Volatility surface error:', err);
     return NextResponse.json(
       { error: 'Failed to fetch options data' },
       { status: 500 },

@@ -9,6 +9,7 @@ const COINGECKO_IDS: Record<string, string> = {
   BTCUSDT: 'bitcoin',
   ETHUSDT: 'ethereum',
 };
+const ALLOWED_SYMBOLS = new Set(Object.keys(COINGECKO_IDS));
 const MAX_FREE_DAYS = 365;
 
 interface VolumePoint {
@@ -22,13 +23,11 @@ export async function GET(request: NextRequest) {
   const symbol = searchParams.get('symbol') || 'BTCUSDT';
   const requestedDays = parseInt(searchParams.get('days') || '365', 10);
 
-  const coinId = COINGECKO_IDS[symbol];
-  if (!coinId) {
-    return NextResponse.json(
-      { error: `Unsupported symbol: ${symbol}` },
-      { status: 400 },
-    );
+  if (!ALLOWED_SYMBOLS.has(symbol)) {
+    return NextResponse.json({ error: 'Invalid symbol' }, { status: 400 });
   }
+
+  const coinId = COINGECKO_IDS[symbol];
 
   // Cap to free tier limit
   const days = Math.min(requestedDays >= 9999 ? MAX_FREE_DAYS : requestedDays, MAX_FREE_DAYS);
@@ -96,12 +95,11 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(enriched, {
       headers: {
         'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
-        'X-Data-Source': 'coingecko',
       },
     });
   } catch (err) {
     return NextResponse.json(
-      { error: 'Failed to fetch volume data', details: String(err) },
+      { error: 'Failed to fetch volume data' },
       { status: 500 },
     );
   }

@@ -40,8 +40,10 @@ async function fetchBinanceGlobal(
 
   const allKlines: unknown[] = [];
   let currentStart = startTime;
+  let pages = 0;
 
-  while (currentStart < now) {
+  while (currentStart < now && pages < MAX_PAGES) {
+    pages++;
     const url = new URL(BINANCE_GLOBAL);
     url.searchParams.set('symbol', symbol);
     url.searchParams.set('interval', interval);
@@ -85,9 +87,11 @@ async function fetchDeFiLlama(
   let currentStart = startSec;
   const endSec = Math.floor(now / 1000);
   const allPrices: DefiLlamaPrice[] = [];
+  let pages = 0;
 
   // Paginate in chunks
-  while (currentStart < endSec) {
+  while (currentStart < endSec && pages < MAX_PAGES) {
+    pages++;
     const url = `${DEFILLAMA_BASE}/${coinId}?start=${currentStart}&span=${DEFILLAMA_SPAN}&period=1d&searchWidth=600`;
 
     try {
@@ -165,6 +169,11 @@ async function fetchDeFiLlama(
   return klines;
 }
 
+// ── Input validation ────────────────────────────────────────────
+const ALLOWED_SYMBOLS = new Set(['BTCUSDT', 'ETHUSDT']);
+const ALLOWED_INTERVALS = new Set(['1d', '1h', '4h', '1w']);
+const MAX_PAGES = 15; // Cap pagination loops to prevent amplification
+
 // ── Route handler ────────────────────────────────────────────────
 
 export async function GET(request: NextRequest) {
@@ -172,6 +181,13 @@ export async function GET(request: NextRequest) {
   const symbol = searchParams.get('symbol') || 'BTCUSDT';
   const interval = searchParams.get('interval') || '1d';
   const days = parseInt(searchParams.get('days') || '365', 10);
+
+  if (!ALLOWED_SYMBOLS.has(symbol)) {
+    return NextResponse.json({ error: 'Invalid symbol' }, { status: 400 });
+  }
+  if (!ALLOWED_INTERVALS.has(interval)) {
+    return NextResponse.json({ error: 'Invalid interval' }, { status: 400 });
+  }
 
   try {
     const now = Date.now();
@@ -187,7 +203,6 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(binanceData, {
         headers: {
           'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
-          'X-Data-Source': 'binance-global',
         },
       });
     }
@@ -198,7 +213,6 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(llamaData, {
         headers: {
           'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
-          'X-Data-Source': 'defillama',
         },
       });
     }
@@ -209,7 +223,7 @@ export async function GET(request: NextRequest) {
     );
   } catch (err) {
     return NextResponse.json(
-      { error: 'Failed to fetch kline data', details: String(err) },
+      { error: 'Failed to fetch kline data' },
       { status: 500 },
     );
   }
