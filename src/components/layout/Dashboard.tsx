@@ -117,6 +117,25 @@ export default function Dashboard() {
     return vis;
   }, [state.overlays, cycleAnalysis, cycleCandles, volatility]);
 
+  // Filter to only visible cards (must be before early returns to keep hook order stable)
+  const visibleOrder = order.filter((id) => visibleCards.has(id));
+
+  // Move a card up or down within the visible order
+  const moveVisibleCard = useCallback((cardId: CardId, direction: 'up' | 'down') => {
+    const visIdx = visibleOrder.indexOf(cardId);
+    if (visIdx === -1) return;
+    const targetVisIdx = direction === 'up' ? visIdx - 1 : visIdx + 1;
+    if (targetVisIdx < 0 || targetVisIdx >= visibleOrder.length) return;
+
+    // Swap in the full order array
+    const fullIdxA = order.indexOf(cardId);
+    const fullIdxB = order.indexOf(visibleOrder[targetVisIdx]);
+    if (fullIdxA === -1 || fullIdxB === -1) return;
+    const newOrder = [...order];
+    [newOrder[fullIdxA], newOrder[fullIdxB]] = [newOrder[fullIdxB], newOrder[fullIdxA]];
+    reorder(newOrder);
+  }, [visibleOrder, order, reorder]);
+
   if (error) {
     return (
       <div className="mx-auto max-w-[2400px] px-4 py-20 text-center md:px-6">
@@ -258,25 +277,6 @@ export default function Dashboard() {
         return null;
     }
   }
-
-  // Filter to only visible cards
-  const visibleOrder = order.filter((id) => visibleCards.has(id));
-
-  // Move a card up or down within the visible order
-  const moveVisibleCard = useCallback((cardId: CardId, direction: 'up' | 'down') => {
-    const visIdx = visibleOrder.indexOf(cardId);
-    if (visIdx === -1) return;
-    const targetVisIdx = direction === 'up' ? visIdx - 1 : visIdx + 1;
-    if (targetVisIdx < 0 || targetVisIdx >= visibleOrder.length) return;
-
-    // Swap in the full order array
-    const fullIdxA = order.indexOf(cardId);
-    const fullIdxB = order.indexOf(visibleOrder[targetVisIdx]);
-    if (fullIdxA === -1 || fullIdxB === -1) return;
-    const newOrder = [...order];
-    [newOrder[fullIdxA], newOrder[fullIdxB]] = [newOrder[fullIdxB], newOrder[fullIdxA]];
-    reorder(newOrder);
-  }, [visibleOrder, order, reorder]);
 
   return (
     <div className="mx-auto max-w-[2400px] space-y-3 px-3 py-4 sm:space-y-4 sm:px-4 sm:py-6 md:px-6">
