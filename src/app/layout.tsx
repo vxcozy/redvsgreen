@@ -19,9 +19,7 @@ export const metadata: Metadata = {
     description: 'BTC & ETH streak analytics dashboard with technical indicators and cycle analysis.',
     creator: '@vec0zy',
   },
-  icons: {
-    icon: '/favicon.ico',
-  },
+  manifest: '/manifest.json',
 };
 
 export default function RootLayout({

@@ -1,0 +1,21 @@
+{
+  "name": "Red vs Green Streaks",
+  "short_name": "RedVsGreen",
+  "description": "BTC & ETH streak analytics with technical indicators and cycle analysis",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#06080d",
+  "theme_color": "#06080d",
+  "icons": [
+    {
+      "src": "/icon",
+      "sizes": "32x32",
+      "type": "image/png"
+    },
+    {
+      "src": "/apple-icon",
+      "sizes": "180x180",
+      "type": "image/png"
+    }
+  ]
+}
