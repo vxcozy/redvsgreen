@@ -34,8 +34,13 @@ function maybeCleanup() {
 }
 
 export function middleware(request: NextRequest) {
-  // Only rate-limit API routes
+  // Only rate-limit API routes (skip auth routes — OAuth callbacks need free flow)
   if (!request.nextUrl.pathname.startsWith('/api/')) {
+    return NextResponse.next();
+  }
+  // Only exempt OAuth callback routes from rate limiting (they need free flow).
+  // Other auth routes (signin, csrf, session) still get rate-limited.
+  if (request.nextUrl.pathname.startsWith('/api/auth/callback')) {
     return NextResponse.next();
   }
 

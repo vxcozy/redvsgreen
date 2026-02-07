@@ -1,6 +1,7 @@
 'use client';
 
 import { useDashboard } from '@/context/DashboardContext';
+import AuthButton from '@/components/auth/AuthButton';
 import type { Asset, TimeRange } from '@/lib/types';
 
 export default function Header() {
@@ -63,6 +64,8 @@ export default function Header() {
               </button>
             ))}
           </div>
+
+          <AuthButton />
         </div>
       </div>
     </header>
