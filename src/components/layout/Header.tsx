@@ -12,7 +12,7 @@ export default function Header() {
 
   return (
     <header className="sticky top-0 z-50 border-b border-border-default bg-bg-primary/80 backdrop-blur-xl">
-      <div className="mx-auto flex max-w-[1440px] items-center justify-between px-3 py-2 sm:px-4 sm:py-3 md:px-6">
+      <div className="mx-auto flex max-w-[2400px] items-center justify-between px-3 py-2 sm:px-4 sm:py-3 md:px-6">
         <div className="flex items-center gap-2 sm:gap-3">
           <h1 className="font-[var(--font-display)] text-base font-black tracking-tight sm:text-lg md:text-xl">
             <span className="text-red-streak">RED</span>

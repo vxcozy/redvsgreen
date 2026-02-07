@@ -79,7 +79,7 @@ export function usePersistedLayout() {
   }, []);
 
   const getCardSize = useCallback(
-    (cardId: CardId): CardSize => sizes[cardId] || 'S',
+    (cardId: CardId): CardSize => sizes[cardId] || 'M',
     [sizes],
   );
 

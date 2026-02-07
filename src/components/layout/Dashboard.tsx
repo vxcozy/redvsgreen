@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useCallback } from 'react';
 import { Reorder, useDragControls } from 'framer-motion';
 import { useDashboard } from '@/context/DashboardContext';
 import { useBinanceKlines } from '@/hooks/useBinanceKlines';
@@ -33,17 +33,30 @@ import CardWrapper from '@/components/ui/CardWrapper';
 
 import type { CardId, CardSize } from '@/lib/constants';
 
+// ─── Column span helper ─────────────────────────────────────
+function getColSpanClass(size: CardSize): string {
+  return size === 'S' ? 'col-span-1' : 'col-span-1 lg:col-span-2';
+}
+
 // ─── Reorder Item wrapper (each card needs its own drag controls) ─────
 function DraggableCard({
   cardId,
   children,
   size,
   onSizeChange,
+  onMoveUp,
+  onMoveDown,
+  isFirst,
+  isLast,
 }: {
   cardId: CardId;
   children: React.ReactNode;
   size: CardSize;
   onSizeChange: (s: CardSize) => void;
+  onMoveUp?: () => void;
+  onMoveDown?: () => void;
+  isFirst?: boolean;
+  isLast?: boolean;
 }) {
   const controls = useDragControls();
 
@@ -53,12 +66,16 @@ function DraggableCard({
       dragListener={false}
       dragControls={controls}
       transition={{ duration: 0.25 }}
-      className="list-none"
+      className={`list-none ${getColSpanClass(size)}`}
     >
       <CardWrapper
         size={size}
         onSizeChange={onSizeChange}
         dragControls={controls}
+        onMoveUp={onMoveUp}
+        onMoveDown={onMoveDown}
+        isFirst={isFirst}
+        isLast={isLast}
       >
         {children}
       </CardWrapper>
@@ -102,7 +119,7 @@ export default function Dashboard() {
 
   if (error) {
     return (
-      <div className="mx-auto max-w-[1440px] px-4 py-20 text-center md:px-6">
+      <div className="mx-auto max-w-[2400px] px-4 py-20 text-center md:px-6">
         <div className="rounded-lg border border-red-streak/20 bg-red-muted p-6">
           <p className="text-sm text-red-streak">Failed to load data</p>
           <p className="mt-1 text-[11px] text-text-muted">{error}</p>
@@ -113,7 +130,7 @@ export default function Dashboard() {
 
   if (loading || !stats) {
     return (
-      <div className="mx-auto max-w-[1440px] space-y-3 px-3 py-4 sm:space-y-4 sm:px-4 sm:py-6 md:px-6">
+      <div className="mx-auto max-w-[2400px] space-y-3 px-3 py-4 sm:space-y-4 sm:px-4 sm:py-6 md:px-6">
         <div className="grid grid-cols-2 gap-2 sm:gap-4 lg:grid-cols-4">
           <SkeletonCard />
           <SkeletonCard />
@@ -245,8 +262,24 @@ export default function Dashboard() {
   // Filter to only visible cards
   const visibleOrder = order.filter((id) => visibleCards.has(id));
 
+  // Move a card up or down within the visible order
+  const moveVisibleCard = useCallback((cardId: CardId, direction: 'up' | 'down') => {
+    const visIdx = visibleOrder.indexOf(cardId);
+    if (visIdx === -1) return;
+    const targetVisIdx = direction === 'up' ? visIdx - 1 : visIdx + 1;
+    if (targetVisIdx < 0 || targetVisIdx >= visibleOrder.length) return;
+
+    // Swap in the full order array
+    const fullIdxA = order.indexOf(cardId);
+    const fullIdxB = order.indexOf(visibleOrder[targetVisIdx]);
+    if (fullIdxA === -1 || fullIdxB === -1) return;
+    const newOrder = [...order];
+    [newOrder[fullIdxA], newOrder[fullIdxB]] = [newOrder[fullIdxB], newOrder[fullIdxA]];
+    reorder(newOrder);
+  }, [visibleOrder, order, reorder]);
+
   return (
-    <div className="mx-auto max-w-[1440px] space-y-3 px-3 py-4 sm:space-y-4 sm:px-4 sm:py-6 md:px-6">
+    <div className="mx-auto max-w-[2400px] space-y-3 px-3 py-4 sm:space-y-4 sm:px-4 sm:py-6 md:px-6">
       {/* Fixed: Stats cards row 1 */}
       <div className="grid grid-cols-2 gap-2 sm:gap-4 lg:grid-cols-4">
         <CurrentStreakCard streak={stats.currentStreak} asset={state.asset} />
@@ -298,7 +331,7 @@ export default function Dashboard() {
         />
       </div>
 
-      {/* Draggable cards */}
+      {/* Draggable cards — 2-col grid on lg+ for S/M/L width sizing */}
       {hydrated ? (
         <Reorder.Group
           axis="y"
@@ -320,24 +353,31 @@ export default function Dashboard() {
             while (hi < hiddenInOrder.length) full.push(hiddenInOrder[hi++]);
             reorder(full);
           }}
-          className="space-y-3 sm:space-y-4"
+          className="grid grid-cols-1 gap-3 sm:gap-4 lg:grid-cols-2"
         >
-          {visibleOrder.map((cardId) => (
+          {visibleOrder.map((cardId, index) => (
             <DraggableCard
               key={cardId}
               cardId={cardId}
               size={getCardSize(cardId)}
               onSizeChange={(s) => setCardSize(cardId, s)}
+              onMoveUp={() => moveVisibleCard(cardId, 'up')}
+              onMoveDown={() => moveVisibleCard(cardId, 'down')}
+              isFirst={index === 0}
+              isLast={index === visibleOrder.length - 1}
             >
               {renderCard(cardId)}
             </DraggableCard>
           ))}
         </Reorder.Group>
       ) : (
-        <div className="space-y-3 sm:space-y-4">
-          {visibleOrder.map((cardId) => (
-            <div key={cardId}>{renderCard(cardId)}</div>
-          ))}
+        <div className="grid grid-cols-1 gap-3 sm:gap-4 lg:grid-cols-2">
+          {visibleOrder.map((cardId) => {
+            const colClass = getColSpanClass(getCardSize(cardId));
+            return (
+              <div key={cardId} className={colClass}>{renderCard(cardId)}</div>
+            );
+          })}
         </div>
       )}
     </div>

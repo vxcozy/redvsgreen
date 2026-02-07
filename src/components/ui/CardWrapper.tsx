@@ -12,15 +12,17 @@ interface Props {
   dragControls: ReturnType<typeof useDragControls>;
   /** If true, hide the drag handle (for non-draggable context like fullscreen) */
   hideDragHandle?: boolean;
+  /** Move card up in order */
+  onMoveUp?: () => void;
+  /** Move card down in order */
+  onMoveDown?: () => void;
+  /** Is this the first card in the list? */
+  isFirst?: boolean;
+  /** Is this the last card in the list? */
+  isLast?: boolean;
 }
 
 const SIZE_LABELS: CardSize[] = ['S', 'M', 'L'];
-
-const SIZE_CLASSES: Record<CardSize, string> = {
-  S: '',
-  M: 'col-span-1',
-  L: 'col-span-1',
-};
 
 export function getCardHeightClass(size: CardSize): string {
   switch (size) {
@@ -39,6 +41,10 @@ export default function CardWrapper({
   onSizeChange,
   dragControls,
   hideDragHandle,
+  onMoveUp,
+  onMoveDown,
+  isFirst,
+  isLast,
 }: Props) {
   const [fullscreen, setFullscreen] = useState(false);
 
@@ -47,9 +53,35 @@ export default function CardWrapper({
 
   return (
     <>
-      <div className={`group relative ${SIZE_CLASSES[size]} ${getCardHeightClass(size)}`}>
+      <div className={`group relative ${getCardHeightClass(size)}`}>
         {/* Toolbar — visible on hover */}
         <div className="absolute -top-0 right-0 z-10 flex items-center gap-0.5 rounded-bl-md rounded-tr-lg bg-bg-tertiary/90 px-1.5 py-0.5 opacity-0 backdrop-blur-sm transition-opacity group-hover:opacity-100">
+          {/* Move up */}
+          {onMoveUp && !isFirst && (
+            <button
+              onClick={onMoveUp}
+              className="p-1 text-text-muted hover:text-text-primary"
+              aria-label="Move card up"
+            >
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <path d="M2 8L6 4L10 8" />
+              </svg>
+            </button>
+          )}
+
+          {/* Move down */}
+          {onMoveDown && !isLast && (
+            <button
+              onClick={onMoveDown}
+              className="p-1 text-text-muted hover:text-text-primary"
+              aria-label="Move card down"
+            >
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <path d="M2 4L6 8L10 4" />
+              </svg>
+            </button>
+          )}
+
           {/* Drag handle */}
           {!hideDragHandle && (
             <button
