@@ -137,7 +137,7 @@ export default function CyclePositionCard({ analysis, asset }: Props) {
         {/* Header with cycle selector */}
         <div className="mb-3 flex flex-col gap-2 sm:mb-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-1.5 sm:gap-2">
-            <span className="text-[9px] uppercase tracking-[0.15em] text-text-muted sm:text-[10px] sm:tracking-[0.2em]">
+            <span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-text-secondary sm:text-[11px] sm:tracking-[0.2em]">
               Cycle Position
             </span>
             <span

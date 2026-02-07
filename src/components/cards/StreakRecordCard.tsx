@@ -12,7 +12,7 @@ export default function StreakRecordCard({ title, streaks, variant }: Props) {
 
   return (
     <div className="rounded-lg border border-border-default bg-bg-card p-3 sm:p-5">
-      <h3 className="mb-2 text-[9px] uppercase tracking-[0.15em] text-text-muted sm:mb-3 sm:text-[10px] sm:tracking-[0.2em]">
+      <h3 className="mb-2 text-[10px] font-semibold uppercase tracking-[0.15em] text-text-secondary sm:mb-3 sm:text-[11px] sm:tracking-[0.2em]">
         {title}
       </h3>
       <div className="space-y-1.5 sm:space-y-2">

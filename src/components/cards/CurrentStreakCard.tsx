@@ -27,7 +27,7 @@ export default function CurrentStreakCard({ streak, asset }: Props) {
       />
       <div className="relative">
         <div className="mb-0.5 flex items-center gap-1.5 sm:mb-1 sm:gap-2">
-          <span className="text-[9px] uppercase tracking-[0.15em] text-text-muted sm:text-[10px] sm:tracking-[0.2em]">
+          <span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-text-secondary sm:text-[11px] sm:tracking-[0.2em]">
             Current Streak
           </span>
           <span className="text-[9px] font-bold uppercase tracking-[0.1em] sm:text-[10px] sm:tracking-[0.15em]" style={{ color: colorStyle }}>

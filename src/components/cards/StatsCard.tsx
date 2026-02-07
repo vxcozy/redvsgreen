@@ -15,7 +15,7 @@ export default function StatsCard({ label, value, subtext, variant = 'neutral' }
 
   return (
     <div className="rounded-lg border border-border-default bg-bg-card p-3 sm:p-5">
-      <div className="mb-0.5 text-[9px] uppercase tracking-[0.15em] text-text-muted sm:mb-1 sm:text-[10px] sm:tracking-[0.2em]">
+      <div className="mb-0.5 text-[10px] font-semibold uppercase tracking-[0.15em] text-text-secondary sm:mb-1 sm:text-[11px] sm:tracking-[0.2em]">
         {label}
       </div>
       <div className="text-lg font-bold font-[var(--font-display)] sm:text-2xl" style={{ color: colorStyle }}>
