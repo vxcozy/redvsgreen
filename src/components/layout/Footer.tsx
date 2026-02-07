@@ -6,9 +6,8 @@ export default function Footer() {
           Data collected privately by the coziest
         </p>
         <p className="text-[10px] tracking-wide text-text-muted">
-          <span className="text-red-streak">RED</span>
-          <span className="mx-1 text-text-muted/50">vs</span>
-          <span className="text-green-streak">GREEN</span>
+          <span className="text-text-primary font-semibold">COZIEST</span>
+          <span className="text-accent font-semibold">.TOOLS</span>
         </p>
       </div>
     </footer>

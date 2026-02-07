@@ -13,31 +13,33 @@ export default function Icon() {
           justifyContent: 'center',
           width: '100%',
           height: '100%',
-          backgroundColor: '#06080d',
+          backgroundColor: '#000000',
           borderRadius: '6px',
-          gap: '1px',
         }}
       >
-        <span
-          style={{
-            fontSize: 18,
-            fontWeight: 900,
-            color: '#ff3b5c',
-            lineHeight: 1,
-          }}
+        <svg
+          width="26"
+          height="26"
+          viewBox="0 0 26 26"
+          fill="none"
         >
-          R
-        </span>
-        <span
-          style={{
-            fontSize: 18,
-            fontWeight: 900,
-            color: '#00ff87',
-            lineHeight: 1,
-          }}
-        >
-          G
-        </span>
+          <defs>
+            <linearGradient id="g" x1="0" y1="26" x2="0" y2="0">
+              <stop offset="0%" stopColor="#ff3b5c" />
+              <stop offset="45%" stopColor="#ff3b5c" />
+              <stop offset="55%" stopColor="#00ff87" />
+              <stop offset="100%" stopColor="#00ff87" />
+            </linearGradient>
+          </defs>
+          <path
+            d="M2 22 L6 18 L10 20 L14 14 L18 10 L22 6 L24 4"
+            stroke="url(#g)"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            fill="none"
+          />
+        </svg>
       </div>
     ),
     { ...size }

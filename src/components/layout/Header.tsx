@@ -15,21 +15,9 @@ export default function Header() {
       <div className="mx-auto flex max-w-[2400px] items-center justify-between px-3 py-2 sm:px-4 sm:py-3 md:px-6">
         <div className="flex items-center gap-2 sm:gap-3">
           <h1 className="font-[var(--font-display)] text-base font-black tracking-tight sm:text-lg md:text-xl">
-            <span className="text-red-streak">RED</span>
-            <span className="mx-1 text-text-muted font-light sm:mx-1.5">vs</span>
-            <span className="text-green-streak">GREEN</span>
+            <span className="text-text-primary">COZIEST</span>
+            <span className="text-accent">.TOOLS</span>
           </h1>
-          <span className="hidden text-[10px] uppercase tracking-[0.2em] text-text-muted md:inline">
-            Streaks by{' '}
-            <a
-              href="https://x.com/vec0zy"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-accent hover:underline"
-            >
-              Cozy
-            </a>
-          </span>
         </div>
 
         <div className="flex items-center gap-1.5 sm:gap-2 md:gap-3">

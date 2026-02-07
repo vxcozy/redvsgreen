@@ -1,7 +1,7 @@
 import { ImageResponse } from 'next/og';
 
 export const runtime = 'edge';
-export const alt = 'Red vs Green Streaks by Cozy';
+export const alt = 'CoziestTools — BTC & ETH Analytics';
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
 
@@ -24,18 +24,15 @@ export default async function Image() {
           style={{
             display: 'flex',
             alignItems: 'baseline',
-            gap: '16px',
+            gap: '0px',
             marginBottom: '24px',
           }}
         >
-          <span style={{ fontSize: 72, fontWeight: 900, color: '#ff3b5c' }}>
-            RED
-          </span>
-          <span style={{ fontSize: 48, fontWeight: 300, color: '#4a5568' }}>
-            vs
+          <span style={{ fontSize: 72, fontWeight: 900, color: '#e2e8f0' }}>
+            COZIEST
           </span>
           <span style={{ fontSize: 72, fontWeight: 900, color: '#00ff87' }}>
-            GREEN
+            .TOOLS
           </span>
         </div>
         <div
@@ -46,7 +43,7 @@ export default async function Image() {
             textTransform: 'uppercase' as const,
           }}
         >
-          Streaks by Cozy
+          BTC & ETH Analytics
         </div>
         <div
           style={{
@@ -57,7 +54,7 @@ export default async function Image() {
             textAlign: 'center' as const,
           }}
         >
-          BTC & ETH streak analytics with technical indicators and cycle analysis
+          Streak analysis, technical indicators, and cycle analytics
         </div>
       </div>
     ),

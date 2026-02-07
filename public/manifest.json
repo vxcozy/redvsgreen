@@ -1,6 +1,6 @@
 {
-  "name": "Red vs Green Streaks",
-  "short_name": "RedVsGreen",
+  "name": "CoziestTools",
+  "short_name": "CoziestTools",
   "description": "BTC & ETH streak analytics with technical indicators and cycle analysis",
   "start_url": "/",
   "display": "standalone",
