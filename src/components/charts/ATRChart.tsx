@@ -11,7 +11,7 @@ interface Props {
   height?: number;
 }
 
-export default function RSIChart({ data, height = 180 }: Props) {
+export default function ATRChart({ data, height = 180 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
 
@@ -46,30 +46,14 @@ export default function RSIChart({ data, height = 180 }: Props) {
       },
     });
 
-    const rsiSeries = chart.addSeries(LineSeries, {
-      color: COLORS.overlay.rsi,
+    const atrSeries = chart.addSeries(LineSeries, {
+      color: COLORS.overlay.atr,
       lineWidth: 2 as const,
       priceLineVisible: false,
     });
 
-    const overbought = chart.addSeries(LineSeries, {
-      color: COLORS.streak.red + '66',
-      lineWidth: 1 as const,
-      lineStyle: LineStyle.Dashed,
-      priceLineVisible: false,
-    });
-
-    const oversold = chart.addSeries(LineSeries, {
-      color: COLORS.streak.green + '66',
-      lineWidth: 1 as const,
-      lineStyle: LineStyle.Dashed,
-      priceLineVisible: false,
-    });
-
     if (data.length > 0) {
-      rsiSeries.setData(data.map((p) => ({ time: p.time as Time, value: p.value })));
-      overbought.setData(data.map((p) => ({ time: p.time as Time, value: 70 })));
-      oversold.setData(data.map((p) => ({ time: p.time as Time, value: 30 })));
+      atrSeries.setData(data.map((p) => ({ time: p.time as Time, value: p.value })));
       chart.timeScale().fitContent();
     }
 
@@ -83,14 +67,10 @@ export default function RSIChart({ data, height = 180 }: Props) {
 
   return (
     <div className="chart-container rounded-lg border border-border-default bg-bg-card p-2 sm:p-3">
-      <SectionHeader title="RSI (14)">
+      <SectionHeader title="ATR (14)">
         <span className="flex items-center gap-1 text-[8px] text-text-muted sm:text-[9px]">
-          <span className="inline-block h-[2px] w-2.5 rounded sm:w-3" style={{ backgroundColor: '#ff3b5c66' }} />
-          70
-        </span>
-        <span className="flex items-center gap-1 text-[8px] text-text-muted sm:text-[9px]">
-          <span className="inline-block h-[2px] w-2.5 rounded sm:w-3" style={{ backgroundColor: '#00ff8766' }} />
-          30
+          <span className="inline-block h-[2px] w-2.5 rounded sm:w-3" style={{ backgroundColor: COLORS.overlay.atr }} />
+          Average True Range
         </span>
       </SectionHeader>
       <div ref={containerRef} className="h-[140px] sm:h-[180px]" />

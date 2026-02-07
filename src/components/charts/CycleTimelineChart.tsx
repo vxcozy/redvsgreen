@@ -12,6 +12,7 @@ import {
   CartesianGrid,
 } from 'recharts';
 import { OHLCV, CycleAnalysis, CyclePoint } from '@/lib/types';
+import SectionHeader from '@/components/ui/SectionHeader';
 
 interface Props {
   candles: OHLCV[];
@@ -105,21 +106,16 @@ export default function CycleTimelineChart({ candles, analysis, asset }: Props) 
 
   return (
     <div className="rounded-lg border border-border-default bg-bg-card p-2 sm:p-4">
-      <div className="mb-2 flex items-center justify-between sm:mb-3">
-        <div className="text-[9px] uppercase tracking-[0.15em] text-text-muted sm:text-[10px] sm:tracking-[0.2em]">
-          {asset} Cycle Timeline
-        </div>
-        <div className="flex items-center gap-2 text-[8px] text-text-muted/60 sm:gap-3 sm:text-[9px]">
-          <span className="flex items-center gap-1">
-            <span className="inline-block h-1.5 w-1.5 rounded-full sm:h-2 sm:w-2" style={{ backgroundColor: '#ff3b5c' }} />
-            Peak
-          </span>
-          <span className="flex items-center gap-1">
-            <span className="inline-block h-1.5 w-1.5 rounded-full sm:h-2 sm:w-2" style={{ backgroundColor: '#00ff87' }} />
-            Trough
-          </span>
-        </div>
-      </div>
+      <SectionHeader title={`${asset} Cycle Timeline`}>
+        <span className="flex items-center gap-1 text-[8px] text-text-muted/60 sm:text-[9px]">
+          <span className="inline-block h-1.5 w-1.5 rounded-full sm:h-2 sm:w-2" style={{ backgroundColor: '#ff3b5c' }} />
+          Peak
+        </span>
+        <span className="flex items-center gap-1 text-[8px] text-text-muted/60 sm:text-[9px]">
+          <span className="inline-block h-1.5 w-1.5 rounded-full sm:h-2 sm:w-2" style={{ backgroundColor: '#00ff87' }} />
+          Trough
+        </span>
+      </SectionHeader>
 
       {/* Chart */}
       <div className="h-[200px] sm:h-[280px]">

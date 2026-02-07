@@ -9,6 +9,7 @@ import {
   ResponsiveContainer,
   Legend,
 } from 'recharts';
+import SectionHeader from '@/components/ui/SectionHeader';
 
 interface Props {
   greenDistribution: Record<number, number>;
@@ -31,9 +32,7 @@ export default function StreakHistogram({ greenDistribution, redDistribution }: 
 
   return (
     <div className="rounded-lg border border-border-default bg-bg-card p-2 sm:p-3">
-      <div className="mb-1.5 px-1 text-[9px] uppercase tracking-[0.15em] text-text-muted sm:mb-2 sm:text-[10px] sm:tracking-[0.2em]">
-        Streak Length Distribution
-      </div>
+      <SectionHeader title="Streak Length Distribution" />
       <div className="h-[160px] sm:h-[200px]">
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data} barGap={2}>

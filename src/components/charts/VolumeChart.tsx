@@ -12,6 +12,7 @@ import {
 } from 'recharts';
 import { OHLCV } from '@/lib/types';
 import { BINANCE_SYMBOLS, TIME_RANGE_DAYS } from '@/lib/constants';
+import SectionHeader from '@/components/ui/SectionHeader';
 
 interface Props {
   candles: OHLCV[];
@@ -112,9 +113,7 @@ export default function VolumeChart({ candles, asset, timeRange }: Props) {
   if (loading) {
     return (
       <div className="rounded-lg border border-border-default bg-bg-card p-2 sm:p-3">
-        <div className="mb-1.5 px-1 text-[9px] uppercase tracking-[0.15em] text-text-muted sm:mb-2 sm:text-[10px] sm:tracking-[0.2em]">
-          Volume
-        </div>
+        <SectionHeader title="Volume" />
         <div className="flex h-[140px] items-center justify-center text-[10px] text-text-muted/60 sm:h-[180px] sm:text-[11px]">
           Loading volume data…
         </div>
@@ -125,9 +124,7 @@ export default function VolumeChart({ candles, asset, timeRange }: Props) {
   if (chartData.length === 0 || fetchError) {
     return (
       <div className="rounded-lg border border-border-default bg-bg-card p-2 sm:p-3">
-        <div className="mb-1.5 px-1 text-[9px] uppercase tracking-[0.15em] text-text-muted sm:mb-2 sm:text-[10px] sm:tracking-[0.2em]">
-          Volume
-        </div>
+        <SectionHeader title="Volume" />
         <div className="flex h-[140px] items-center justify-center text-[10px] text-text-muted/60 sm:h-[180px] sm:text-[11px]">
           Volume data unavailable
         </div>
@@ -137,9 +134,7 @@ export default function VolumeChart({ candles, asset, timeRange }: Props) {
 
   return (
     <div className="rounded-lg border border-border-default bg-bg-card p-2 sm:p-3">
-      <div className="mb-1.5 px-1 text-[9px] uppercase tracking-[0.15em] text-text-muted sm:mb-2 sm:text-[10px] sm:tracking-[0.2em]">
-        Volume
-      </div>
+      <SectionHeader title="Volume" />
       <div className="h-[140px] sm:h-[180px]">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={chartData} barGap={0} barCategoryGap={0}>

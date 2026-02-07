@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useRef, useEffect, useCallback } from 'react';
 import { OHLCV } from '@/lib/types';
+import SectionHeader from '@/components/ui/SectionHeader';
 
 interface Props {
   candles: OHLCV[];
@@ -139,9 +140,7 @@ export default function HeatmapChart({ candles }: Props) {
 
   return (
     <div ref={containerRef} className="relative rounded-lg border border-border-default bg-bg-card p-2 sm:p-4">
-      <div className="mb-2 text-[9px] uppercase tracking-[0.15em] text-text-muted sm:mb-3 sm:text-[10px] sm:tracking-[0.2em]">
-        Daily Returns Heatmap
-      </div>
+      <SectionHeader title="Daily Returns Heatmap" />
       <div className="overflow-x-auto">
         <div className="flex justify-center gap-[2px]" style={{ minWidth: weeks.length * 12 }}>
           {weeks.map((week, wi) => (

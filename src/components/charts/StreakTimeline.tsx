@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { Streak } from '@/lib/types';
+import SectionHeader from '@/components/ui/SectionHeader';
 
 interface Props {
   streaks: Streak[];
@@ -19,9 +20,7 @@ export default function StreakTimeline({ streaks }: Props) {
 
   return (
     <div className="rounded-lg border border-border-default bg-bg-card p-2 sm:p-4">
-      <div className="mb-2 text-[9px] uppercase tracking-[0.15em] text-text-muted sm:mb-3 sm:text-[10px] sm:tracking-[0.2em]">
-        Streak Timeline
-      </div>
+      <SectionHeader title="Streak Timeline" />
       <div className="relative">
         <div className="flex h-6 w-full overflow-hidden rounded-sm sm:h-8">
           {streaks.map((s, i) => {

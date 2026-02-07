@@ -11,22 +11,18 @@ import {
 } from 'recharts';
 import { useMemo } from 'react';
 import { FearGreedEntry, TimeRange } from '@/lib/types';
+import { TIME_RANGE_DAYS } from '@/lib/constants';
+import SectionHeader from '@/components/ui/SectionHeader';
 
 interface Props {
   data: FearGreedEntry[];
   timeRange: TimeRange;
 }
 
-const TIME_RANGE_DAYS: Record<TimeRange, number> = {
-  '1Y': 365,
-  '2Y': 730,
-  ALL: Infinity,
-};
-
 export default function FearGreedChart({ data, timeRange }: Props) {
   const chartData = useMemo(() => {
-    const maxDays = TIME_RANGE_DAYS[timeRange];
-    const sliced = maxDays === Infinity ? data : data.slice(0, maxDays);
+    const maxDays = TIME_RANGE_DAYS[timeRange] ?? 9999;
+    const sliced = maxDays >= 9999 ? data : data.slice(0, maxDays);
     return [...sliced].reverse().map((d) => ({
       date: d.date,
       value: d.value,
@@ -36,9 +32,7 @@ export default function FearGreedChart({ data, timeRange }: Props) {
 
   return (
     <div className="rounded-lg border border-border-default bg-bg-card p-2 sm:p-3">
-      <div className="mb-1.5 px-1 text-[9px] uppercase tracking-[0.15em] text-text-muted sm:mb-2 sm:text-[10px] sm:tracking-[0.2em]">
-        Fear &amp; Greed Index
-      </div>
+      <SectionHeader title="Fear & Greed Index" />
       <div className="h-[140px] sm:h-[180px]">
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart data={chartData}>

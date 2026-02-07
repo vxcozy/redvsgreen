@@ -2,6 +2,7 @@
 
 import { useDashboard } from '@/context/DashboardContext';
 import type { OverlayKey } from '@/lib/types';
+import SectionHeader from '@/components/ui/SectionHeader';
 
 interface ToggleItem {
   key: OverlayKey;
@@ -13,8 +14,8 @@ const OVERLAY_GROUPS: { title: string; items: ToggleItem[] }[] = [
   {
     title: 'Indicators',
     items: [
-      { key: 'sma50', label: '50 MA', color: '#00bbff' },
-      { key: 'sma200', label: '200 MA', color: '#ff9500' },
+      { key: 'sma50', label: 'SMA 50', color: '#00bbff' },
+      { key: 'sma200', label: 'SMA 200', color: '#ff9500' },
       { key: 'bollingerBands', label: 'Bollinger', color: '#6366f1' },
       { key: 'rsi', label: 'RSI', color: '#a855f7' },
       { key: 'atr', label: 'ATR', color: '#f59e0b' },
@@ -48,9 +49,7 @@ export default function OverlayTogglePanel() {
 
   return (
     <div className="rounded-lg border border-border-default bg-bg-card p-3 sm:p-4">
-      <div className="mb-2 text-[9px] uppercase tracking-[0.15em] text-text-muted sm:mb-3 sm:text-[10px] sm:tracking-[0.2em]">
-        Overlays
-      </div>
+      <SectionHeader title="Overlays" />
       <div className="flex flex-wrap gap-3 sm:gap-6">
         {OVERLAY_GROUPS.map((group) => (
           <div key={group.title} className="flex flex-col gap-1.5 sm:gap-2">

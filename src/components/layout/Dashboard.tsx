@@ -15,6 +15,7 @@ import OverlayTogglePanel from '@/components/controls/OverlayTogglePanel';
 import CandlestickChart from '@/components/charts/CandlestickChart';
 import StreakTimeline from '@/components/charts/StreakTimeline';
 import RSIChart from '@/components/charts/RSIChart';
+import ATRChart from '@/components/charts/ATRChart';
 import VolumeChart from '@/components/charts/VolumeChart';
 import FearGreedChart from '@/components/charts/FearGreedChart';
 import StreakHistogram from '@/components/charts/StreakHistogram';
@@ -29,7 +30,7 @@ export default function Dashboard() {
   const { data: candles, loading, error } = useBinanceKlines(state.asset, state.timeRange);
   const { data: fearGreedData } = useFearGreed();
   const { stats } = useStreakAnalysis(candles);
-  const { sma50, sma200, rsi, bollingerBands } = useTechnicalIndicators(candles);
+  const { sma50, sma200, rsi, bollingerBands, atr } = useTechnicalIndicators(candles);
 
   // Cycle analysis (always uses ALL-time data)
   const { cycleAnalysis, allCandles: cycleCandles } = useCycleAnalysis(state.asset);
@@ -147,6 +148,9 @@ export default function Dashboard() {
 
       {/* RSI directly below price chart */}
       {state.overlays.rsi && <RSIChart data={rsi} />}
+
+      {/* ATR below RSI */}
+      {state.overlays.atr && <ATRChart data={atr} />}
 
       {/* Row 4: Streak timeline */}
       <StreakTimeline streaks={stats.allStreaks} />

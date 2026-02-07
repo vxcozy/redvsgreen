@@ -74,6 +74,8 @@ export const DEFAULT_OVERLAYS = {
 } as const;
 
 export const TIME_RANGE_DAYS: Record<string, number> = {
+  '3M': 90,
+  '6M': 180,
   '1Y': 365,
   '2Y': 730,
   ALL: 9999,

@@ -13,6 +13,7 @@ import {
 } from 'lightweight-charts';
 import { OHLCV, IndicatorPoint, BollingerPoint } from '@/lib/types';
 import { darkChartOptions, candlestickSeriesOptions, overlayLineStyles } from '@/styles/chart-theme';
+import SectionHeader from '@/components/ui/SectionHeader';
 
 interface Props {
   candles: OHLCV[];
@@ -128,31 +129,26 @@ export default function CandlestickChart({
 
   return (
     <div className="chart-container rounded-lg border border-border-default bg-bg-card p-2 sm:p-3">
-      <div className="mb-1.5 flex items-center justify-between px-1 sm:mb-2">
-        <span className="text-[9px] uppercase tracking-[0.15em] text-text-muted sm:text-[10px] sm:tracking-[0.2em]">
-          Price Chart
-        </span>
-        <div className="flex items-center gap-2 sm:gap-3">
-          {showSma50 && (
-            <span className="flex items-center gap-1 text-[8px] text-text-muted sm:text-[9px]">
-              <span className="inline-block h-[2px] w-2.5 rounded sm:w-3" style={{ backgroundColor: '#00bbff' }} />
-              SMA 50
-            </span>
-          )}
-          {showSma200 && (
-            <span className="flex items-center gap-1 text-[8px] text-text-muted sm:text-[9px]">
-              <span className="inline-block h-[2px] w-2.5 rounded sm:w-3" style={{ backgroundColor: '#ff9500' }} />
-              SMA 200
-            </span>
-          )}
-          {showBollinger && (
-            <span className="flex items-center gap-1 text-[8px] text-text-muted sm:text-[9px]">
-              <span className="inline-block h-[2px] w-2.5 rounded sm:w-3" style={{ backgroundColor: '#6366f1' }} />
-              BB
-            </span>
-          )}
-        </div>
-      </div>
+      <SectionHeader title="Price Chart">
+        {showSma50 && (
+          <span className="flex items-center gap-1 text-[8px] text-text-muted sm:text-[9px]">
+            <span className="inline-block h-[2px] w-2.5 rounded sm:w-3" style={{ backgroundColor: '#00bbff' }} />
+            SMA 50
+          </span>
+        )}
+        {showSma200 && (
+          <span className="flex items-center gap-1 text-[8px] text-text-muted sm:text-[9px]">
+            <span className="inline-block h-[2px] w-2.5 rounded sm:w-3" style={{ backgroundColor: '#ff9500' }} />
+            SMA 200
+          </span>
+        )}
+        {showBollinger && (
+          <span className="flex items-center gap-1 text-[8px] text-text-muted sm:text-[9px]">
+            <span className="inline-block h-[2px] w-2.5 rounded sm:w-3" style={{ backgroundColor: '#6366f1' }} />
+            BB
+          </span>
+        )}
+      </SectionHeader>
       <div ref={containerRef} className="h-[280px] sm:h-[350px] md:h-[420px]" />
     </div>
   );

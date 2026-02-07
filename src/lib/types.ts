@@ -135,7 +135,7 @@ export type OverlayKey =
   | 'cycleTimeline';
 
 export type Asset = 'BTC' | 'ETH';
-export type TimeRange = '1Y' | '2Y' | 'ALL';
+export type TimeRange = '3M' | '6M' | '1Y' | '2Y' | 'ALL';
 
 export interface DashboardState {
   asset: Asset;

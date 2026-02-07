@@ -7,7 +7,7 @@ export default function Header() {
   const { state, setAsset, setTimeRange } = useDashboard();
 
   const assets: Asset[] = ['BTC', 'ETH'];
-  const timeRanges: TimeRange[] = ['1Y', '2Y', 'ALL'];
+  const timeRanges: TimeRange[] = ['3M', '6M', '1Y', '2Y', 'ALL'];
 
   return (
     <header className="sticky top-0 z-50 border-b border-border-default bg-bg-primary/80 backdrop-blur-xl">
@@ -19,7 +19,15 @@ export default function Header() {
             <span className="text-green-streak">GREEN</span>
           </h1>
           <span className="hidden text-[10px] uppercase tracking-[0.2em] text-text-muted md:inline">
-            streak analytics
+            Streaks by{' '}
+            <a
+              href="https://x.com/vec0zy"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-accent hover:underline"
+            >
+              Cozy
+            </a>
           </span>
         </div>
 
