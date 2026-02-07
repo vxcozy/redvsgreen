@@ -665,11 +665,19 @@ export function computeCycleAnalysis(
     ? Math.min(daysSincePhaseStart / avgDuration, 1.5)
     : 0;
 
-  // Compute projected cycle top/bottom dates from the phase anchor
-  // Always uses BTC halving-driven durations for consistency across assets
+  // Compute projected cycle top/bottom dates.
+  // ALL assets use BTC's anchor point (last known BTC trough) for projections
+  // because all crypto cycles are fundamentally driven by BTC halvings.
+  // This ensures ETH shows the same Est. Cycle Top / Bottom as BTC.
+  const btcCurrentTrough = KNOWN_BTC_POINTS[KNOWN_BTC_POINTS.length - 1]; // 2022-11-21
+  const projectionAnchor = btcCurrentTrough.type === 'trough'
+    ? btcCurrentTrough
+    : phaseAnchor; // fallback if BTC's last known point isn't a trough
+  const projectionPhase = projectionAnchor.type === 'trough' ? 'bull' : 'bear';
+
   const { projectedTop, projectedBottom } = computeProjections(
-    currentPhase,
-    phaseAnchor,
+    projectionPhase,
+    projectionAnchor,
     today,
     projBullDuration,
     projBearDuration,
