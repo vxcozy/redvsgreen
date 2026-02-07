@@ -18,6 +18,14 @@ export default function Header() {
             <span className="text-text-primary">COZIEST</span>
             <span className="text-accent">.TOOLS</span>
           </h1>
+          <a
+            href="https://x.com/vec0zy"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[10px] text-text-muted transition-colors hover:text-accent sm:text-[11px]"
+          >
+            by <span className="text-text-secondary hover:text-accent">cozy</span>
+          </a>
         </div>
 
         <div className="flex items-center gap-1.5 sm:gap-2 md:gap-3">

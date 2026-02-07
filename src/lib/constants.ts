@@ -113,7 +113,7 @@ export const DEFAULT_SIZES: Partial<Record<CardId, CardSize>> = {
   rsi: 'S',
   atr: 'S',
   fearGreed: 'S',
-  volume: 'S',
+  volume: 'M',
   heatmap: 'S',
   streakHistogram: 'S',
   volatility: 'S',
