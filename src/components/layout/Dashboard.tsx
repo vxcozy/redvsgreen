@@ -66,7 +66,7 @@ function DraggableCard({
       dragListener={false}
       dragControls={controls}
       transition={{ duration: 0.25 }}
-      className={`list-none ${getColSpanClass(size)}`}
+      className={`list-none ${getColSpanClass(size)} h-full`}
     >
       <CardWrapper
         size={size}
@@ -375,7 +375,7 @@ export default function Dashboard() {
           {visibleOrder.map((cardId) => {
             const colClass = getColSpanClass(getCardSize(cardId));
             return (
-              <div key={cardId} className={colClass}>{renderCard(cardId)}</div>
+              <div key={cardId} className={`${colClass} h-full`}>{renderCard(cardId)}</div>
             );
           })}
         </div>

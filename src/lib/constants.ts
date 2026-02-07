@@ -92,14 +92,14 @@ export const CARD_IDS = [
   'priceChart',
   'rsi',
   'atr',
+  'fearGreed',
   'volume',
-  'streakTimeline',
   'heatmap',
   'streakHistogram',
-  'fearGreed',
-  'cycleTimeline',
+  'streakTimeline',
   'volatility',
   'volatilitySurface',
+  'cycleTimeline',
   'btcEthComparison',
   'streakRecords',
 ] as const;
@@ -107,3 +107,15 @@ export const CARD_IDS = [
 export type CardId = (typeof CARD_IDS)[number];
 
 export type CardSize = 'S' | 'M' | 'L';
+
+/** Default card sizes — cards not listed here default to 'M' (full-width). */
+export const DEFAULT_SIZES: Partial<Record<CardId, CardSize>> = {
+  rsi: 'S',
+  atr: 'S',
+  fearGreed: 'S',
+  volume: 'S',
+  heatmap: 'S',
+  streakHistogram: 'S',
+  volatility: 'S',
+  volatilitySurface: 'S',
+};

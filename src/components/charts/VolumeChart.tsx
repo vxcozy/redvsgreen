@@ -112,9 +112,9 @@ export default function VolumeChart({ candles, asset, timeRange }: Props) {
 
   if (loading) {
     return (
-      <div className="rounded-lg border border-border-default bg-bg-card p-2 sm:p-3">
+      <div className="chart-container flex h-full flex-col rounded-lg border border-border-default bg-bg-card p-2 sm:p-3">
         <SectionHeader title="Volume" />
-        <div className="flex h-[140px] items-center justify-center text-[10px] text-text-muted/60 sm:h-[180px] sm:text-[11px]">
+        <div className="flex min-h-[140px] flex-1 items-center justify-center text-[10px] text-text-muted/60 sm:text-[11px]">
           Loading volume data…
         </div>
       </div>
@@ -123,9 +123,9 @@ export default function VolumeChart({ candles, asset, timeRange }: Props) {
 
   if (chartData.length === 0 || fetchError) {
     return (
-      <div className="rounded-lg border border-border-default bg-bg-card p-2 sm:p-3">
+      <div className="chart-container flex h-full flex-col rounded-lg border border-border-default bg-bg-card p-2 sm:p-3">
         <SectionHeader title="Volume" />
-        <div className="flex h-[140px] items-center justify-center text-[10px] text-text-muted/60 sm:h-[180px] sm:text-[11px]">
+        <div className="flex min-h-[140px] flex-1 items-center justify-center text-[10px] text-text-muted/60 sm:text-[11px]">
           Volume data unavailable
         </div>
       </div>
@@ -133,9 +133,9 @@ export default function VolumeChart({ candles, asset, timeRange }: Props) {
   }
 
   return (
-    <div className="rounded-lg border border-border-default bg-bg-card p-2 sm:p-3">
+    <div className="chart-container flex h-full flex-col rounded-lg border border-border-default bg-bg-card p-2 sm:p-3">
       <SectionHeader title="Volume" />
-      <div className="h-[140px] sm:h-[180px]">
+      <div className="min-h-[140px] flex-1">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={chartData} barGap={0} barCategoryGap={0}>
             <XAxis

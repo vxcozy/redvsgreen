@@ -31,9 +31,9 @@ export default function FearGreedChart({ data, timeRange }: Props) {
   }, [data, timeRange]);
 
   return (
-    <div className="rounded-lg border border-border-default bg-bg-card p-2 sm:p-3">
+    <div className="chart-container flex h-full flex-col rounded-lg border border-border-default bg-bg-card p-2 sm:p-3">
       <SectionHeader title="Fear & Greed Index" />
-      <div className="h-[140px] sm:h-[180px]">
+      <div className="min-h-[140px] flex-1">
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart data={chartData}>
           <defs>

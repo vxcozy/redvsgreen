@@ -30,7 +30,7 @@ export default function VolatilityChart({ data }: Props) {
   if (chartData.length === 0) return null;
 
   return (
-    <div className="rounded-lg border border-border-default bg-bg-card p-2 sm:p-3">
+    <div className="chart-container flex h-full flex-col rounded-lg border border-border-default bg-bg-card p-2 sm:p-3">
       <SectionHeader title="Historical Volatility (30d)">
         <span className="flex items-center gap-1 text-[8px] text-text-muted sm:text-[9px]">
           <span
@@ -40,7 +40,7 @@ export default function VolatilityChart({ data }: Props) {
           Annualised %
         </span>
       </SectionHeader>
-      <div className="h-[140px] sm:h-[180px]">
+      <div className="min-h-[140px] flex-1">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={chartData}>
             <defs>

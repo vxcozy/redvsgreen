@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
-import { CARD_IDS, CardId, CardSize } from '@/lib/constants';
+import { CARD_IDS, CardId, CardSize, DEFAULT_SIZES } from '@/lib/constants';
 
 const STORAGE_KEY = 'rvg-card-layout-v1';
 const MAX_AGE_MS = 365 * 24 * 60 * 60 * 1000; // 365 days
@@ -79,7 +79,7 @@ export function usePersistedLayout() {
   }, []);
 
   const getCardSize = useCallback(
-    (cardId: CardId): CardSize => sizes[cardId] || 'M',
+    (cardId: CardId): CardSize => sizes[cardId] || DEFAULT_SIZES[cardId] || 'M',
     [sizes],
   );
 

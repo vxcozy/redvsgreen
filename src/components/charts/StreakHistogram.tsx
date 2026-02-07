@@ -31,9 +31,9 @@ export default function StreakHistogram({ greenDistribution, redDistribution }: 
     }));
 
   return (
-    <div className="rounded-lg border border-border-default bg-bg-card p-2 sm:p-3">
+    <div className="chart-container flex h-full flex-col rounded-lg border border-border-default bg-bg-card p-2 sm:p-3">
       <SectionHeader title="Streak Length Distribution" />
-      <div className="h-[160px] sm:h-[200px]">
+      <div className="min-h-[160px] flex-1">
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data} barGap={2}>
           <XAxis

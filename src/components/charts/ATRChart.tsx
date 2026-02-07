@@ -66,14 +66,14 @@ export default function ATRChart({ data, height = 180 }: Props) {
   }, [data, height]);
 
   return (
-    <div className="chart-container rounded-lg border border-border-default bg-bg-card p-2 sm:p-3">
+    <div className="chart-container flex h-full flex-col rounded-lg border border-border-default bg-bg-card p-2 sm:p-3">
       <SectionHeader title="ATR (14)">
         <span className="flex items-center gap-1 text-[8px] text-text-muted sm:text-[9px]">
           <span className="inline-block h-[2px] w-2.5 rounded sm:w-3" style={{ backgroundColor: COLORS.overlay.atr }} />
           Average True Range
         </span>
       </SectionHeader>
-      <div ref={containerRef} className="h-[140px] sm:h-[180px]" />
+      <div ref={containerRef} className="min-h-[140px] flex-1" />
     </div>
   );
 }

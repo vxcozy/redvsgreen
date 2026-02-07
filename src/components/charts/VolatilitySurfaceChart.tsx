@@ -200,7 +200,7 @@ export default function VolatilitySurfaceChart({ currency }: Props) {
 
   if (loading) {
     return (
-      <div className="rounded-lg border border-border-default bg-bg-card p-3 sm:p-4">
+      <div className="chart-container flex h-full flex-col rounded-lg border border-border-default bg-bg-card p-3 sm:p-4">
         <SectionHeader title={`${currency} Volatility Surface`} />
         <LoadingSpinner className="py-16" />
       </div>
@@ -209,7 +209,7 @@ export default function VolatilitySurfaceChart({ currency }: Props) {
 
   if (error || !data || data.points.length < 4) {
     return (
-      <div className="rounded-lg border border-border-default bg-bg-card p-3 sm:p-4">
+      <div className="chart-container flex h-full flex-col rounded-lg border border-border-default bg-bg-card p-3 sm:p-4">
         <SectionHeader title={`${currency} Volatility Surface`} />
         <div className="flex items-center justify-center py-12 text-[10px] text-text-muted sm:text-xs">
           {error ? `Error: ${error}` : 'Not enough options data available'}
@@ -219,14 +219,14 @@ export default function VolatilitySurfaceChart({ currency }: Props) {
   }
 
   return (
-    <div className="rounded-lg border border-border-default bg-bg-card p-2 sm:p-3">
+    <div className="chart-container flex h-full flex-col rounded-lg border border-border-default bg-bg-card p-2 sm:p-3">
       <SectionHeader title={`${currency} Implied Volatility Surface`}>
         <span className="text-[7px] text-text-muted/60 sm:text-[8px]">
           Spot: ${data.spotPrice.toLocaleString()} · {data.points.length} options
         </span>
       </SectionHeader>
 
-      <div className="relative h-[280px] sm:h-[380px]">
+      <div className="relative min-h-[280px] flex-1">
         <Canvas
           camera={{ position: [7, 5, 7], fov: 50 }}
           gl={{ antialias: true, alpha: true, powerPreference: 'default' }}

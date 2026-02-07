@@ -144,16 +144,16 @@ export default function HeatmapChart({ candles, timeRange = 'ALL' }: Props) {
   const isGreen = modal ? modal.day.pctChange >= 0 : false;
 
   return (
-    <div ref={containerRef} className="relative rounded-lg border border-border-default bg-bg-card p-2 sm:p-4">
+    <div ref={containerRef} className="chart-container relative flex h-full flex-col rounded-lg border border-border-default bg-bg-card p-2 sm:p-4">
       <SectionHeader title="Daily Returns Heatmap" />
-      <div className="overflow-x-auto">
-        <div className="flex justify-center gap-[2px]" style={{ minWidth: weeks.length * 12 }}>
+      <div className="flex-1 overflow-x-auto">
+        <div className="flex justify-center gap-[2px]" style={{ minWidth: weeks.length * 16 }}>
           {weeks.map((week, wi) => (
             <div key={wi} className="flex flex-col gap-[2px]">
               {week.map((day) => (
                 <div
                   key={day.date}
-                  className="h-[10px] w-[10px] cursor-pointer rounded-[1px] transition-all hover:scale-150 hover:z-10"
+                  className="h-[14px] w-[14px] cursor-pointer rounded-[1px] transition-all hover:scale-150 hover:z-10"
                   style={{ backgroundColor: getColor(day.pctChange) }}
                   title={`${day.date}: ${day.pctChange >= 0 ? '+' : ''}${day.pctChange.toFixed(2)}%`}
                   onClick={(e) => handleSquareClick(day, e)}

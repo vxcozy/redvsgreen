@@ -26,6 +26,8 @@ const SIZE_LABELS: CardSize[] = ['S', 'M', 'L'];
 
 export function getCardHeightClass(size: CardSize): string {
   switch (size) {
+    case 'S':
+      return '[&_.chart-container]:min-h-[180px] [&_.chart-container]:sm:min-h-[220px]';
     case 'M':
       return '[&_.chart-container]:min-h-[320px] [&_.chart-container]:sm:min-h-[400px]';
     case 'L':
@@ -53,7 +55,7 @@ export default function CardWrapper({
 
   return (
     <>
-      <div className={`group relative ${getCardHeightClass(size)}`}>
+      <div className={`group relative h-full ${getCardHeightClass(size)}`}>
         {/* Toolbar — visible on hover */}
         <div className="absolute -top-0 right-0 z-10 flex items-center gap-0.5 rounded-bl-md rounded-tr-lg bg-bg-tertiary/90 px-1.5 py-0.5 opacity-0 backdrop-blur-sm transition-opacity group-hover:opacity-100">
           {/* Move up */}
@@ -130,7 +132,7 @@ export default function CardWrapper({
         </div>
 
         {/* Card content */}
-        <div onPointerDownCapture={(e) => {
+        <div className="h-full" onPointerDownCapture={(e) => {
           // Prevent drag from starting inside chart content
           const target = e.target as HTMLElement;
           if (target.closest('canvas') || target.closest('.recharts-wrapper') || target.closest('.chart-container')) {
