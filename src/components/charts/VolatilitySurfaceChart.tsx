@@ -1,7 +1,7 @@
 'use client';
 
-import { useMemo, useRef, useState, useCallback } from 'react';
-import { Canvas, ThreeEvent } from '@react-three/fiber';
+import { useRef, useMemo, useState, useCallback } from 'react';
+import { Canvas, useFrame, ThreeEvent } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
 import type { VolSurfaceData } from '@/app/api/volatility-surface/route';
@@ -12,14 +12,13 @@ import LoadingSpinner from '@/components/ui/LoadingSpinner';
 // ─── Colour helpers ──────────────────────────────────────────
 function ivToColor(iv: number, minIV: number, maxIV: number): THREE.Color {
   const t = Math.max(0, Math.min(1, (iv - minIV) / (maxIV - minIV || 1)));
-  // blue → cyan → green → yellow → red
   if (t < 0.25) return new THREE.Color().setHSL(0.6 - t * 0.8, 0.9, 0.45);
   if (t < 0.5) return new THREE.Color().setHSL(0.4 - (t - 0.25) * 1.2, 0.9, 0.5);
   if (t < 0.75) return new THREE.Color().setHSL(0.15 - (t - 0.5) * 0.4, 0.9, 0.5);
   return new THREE.Color().setHSL(0.0, 0.9, 0.35 + (1 - t) * 0.2);
 }
 
-// ─── Build surface mesh ─────────────────────────────────────
+// ─── Surface mesh ───────────────────────────────────────────
 interface SurfaceMeshProps {
   data: VolSurfaceData;
   onHover: (info: { moneyness: number; dte: number; iv: number } | null) => void;
@@ -32,7 +31,6 @@ function SurfaceMesh({ data, onHover }: SurfaceMeshProps) {
     const pts = data.points;
     if (pts.length < 4) return { geometry: null, minIV: 0, maxIV: 100 };
 
-    // Build a regular grid via binning
     const moneySet = [...new Set(pts.map((p) => Math.round(p.moneyness * 100) / 100))].sort(
       (a, b) => a - b,
     );
@@ -41,7 +39,6 @@ function SurfaceMesh({ data, onHover }: SurfaceMeshProps) {
     if (moneySet.length < 2 || dteSet.length < 2)
       return { geometry: null, minIV: 0, maxIV: 100 };
 
-    // Create lookup
     const lookup = new Map<string, number>();
     for (const p of pts) {
       const mk = Math.round(p.moneyness * 100) / 100;
@@ -57,11 +54,9 @@ function SurfaceMesh({ data, onHover }: SurfaceMeshProps) {
       if (iv > maxIV) maxIV = iv;
     }
 
-    // Build geometry
     const width = moneySet.length;
     const depth = dteSet.length;
     const geo = new THREE.PlaneGeometry(6, 6, width - 1, depth - 1);
-
     const posAttr = geo.attributes.position as THREE.BufferAttribute;
     const colors = new Float32Array(posAttr.count * 3);
 
@@ -73,7 +68,6 @@ function SurfaceMesh({ data, onHover }: SurfaceMeshProps) {
 
         const xPos = -3 + (xi / (width - 1)) * 6;
         const zPos = -3 + (zi / (depth - 1)) * 6;
-
         let yPos = 0;
         let color = new THREE.Color(0x333333);
 
@@ -97,6 +91,13 @@ function SurfaceMesh({ data, onHover }: SurfaceMeshProps) {
     return { geometry: geo, minIV, maxIV };
   }, [data]);
 
+  // Slow auto-rotation for visual interest
+  useFrame((_, delta) => {
+    if (meshRef.current) {
+      meshRef.current.rotation.z += delta * 0.05;
+    }
+  });
+
   const handlePointerMove = useCallback(
     (e: ThreeEvent<PointerEvent>) => {
       if (!meshRef.current || !geometry) return;
@@ -112,13 +113,10 @@ function SurfaceMesh({ data, onHover }: SurfaceMeshProps) {
 
       const xt = (point.x + 3) / 6;
       const zt = (point.z + 3) / 6;
-
       const mi = Math.round(xt * (moneySet.length - 1));
       const di = Math.round(zt * (dteSet.length - 1));
-
       const moneyness = moneySet[Math.max(0, Math.min(mi, moneySet.length - 1))];
       const dte = dteSet[Math.max(0, Math.min(di, dteSet.length - 1))];
-
       const iv = minIV + (point.y / 3) * (maxIV - minIV);
 
       onHover({ moneyness, dte, iv: Math.round(iv * 10) / 10 });
@@ -140,12 +138,49 @@ function SurfaceMesh({ data, onHover }: SurfaceMeshProps) {
       <meshStandardMaterial
         vertexColors
         side={THREE.DoubleSide}
-        transparent
-        opacity={0.85}
         roughness={0.4}
         metalness={0.1}
       />
     </mesh>
+  );
+}
+
+// ─── Fallback test cube (to verify Canvas is working) ─────
+function TestCube() {
+  const ref = useRef<THREE.Mesh>(null);
+  useFrame((_, delta) => {
+    if (ref.current) ref.current.rotation.y += delta;
+  });
+  return (
+    <mesh ref={ref} position={[0, 1, 0]}>
+      <boxGeometry args={[1, 1, 1]} />
+      <meshStandardMaterial color="#8b5cf6" />
+    </mesh>
+  );
+}
+
+// ─── Scene content (separated for error isolation) ──────────
+function SceneContent({ data, onHover }: SurfaceMeshProps) {
+  return (
+    <>
+      <ambientLight intensity={0.7} />
+      <directionalLight position={[5, 10, 5]} intensity={0.8} />
+      <pointLight position={[-5, 5, -5]} intensity={0.4} />
+
+      <SurfaceMesh data={data} onHover={onHover} />
+      <gridHelper args={[6, 12, '#1a1f2e', '#141820']} position={[0, -0.01, 0]} />
+
+      <OrbitControls
+        autoRotate
+        autoRotateSpeed={0.3}
+        enablePan
+        enableZoom
+        enableRotate
+        maxPolarAngle={Math.PI / 2.2}
+        minDistance={4}
+        maxDistance={15}
+      />
+    </>
   );
 }
 
@@ -161,6 +196,7 @@ export default function VolatilitySurfaceChart({ currency }: Props) {
     dte: number;
     iv: number;
   } | null>(null);
+  const [sceneError, setSceneError] = useState(false);
 
   if (loading) {
     return (
@@ -192,32 +228,27 @@ export default function VolatilitySurfaceChart({ currency }: Props) {
 
       <div className="relative h-[280px] sm:h-[380px]">
         <Canvas
-          camera={{ position: [6, 5, 6], fov: 50 }}
-          gl={{ antialias: true, alpha: true }}
+          camera={{ position: [7, 5, 7], fov: 50 }}
+          gl={{ antialias: true, alpha: true, powerPreference: 'default' }}
           style={{ background: '#0e1119' }}
+          onCreated={(state) => {
+            // Force an initial render
+            state.gl.render(state.scene, state.camera);
+          }}
+          fallback={
+            <div className="flex h-full items-center justify-center text-[10px] text-text-muted">
+              WebGL not supported in this browser
+            </div>
+          }
         >
-          <ambientLight intensity={0.6} />
-          <directionalLight position={[5, 10, 5]} intensity={0.8} />
-          <pointLight position={[-5, 5, -5]} intensity={0.3} />
-
-          <SurfaceMesh data={data} onHover={setHoverInfo} />
-
-          <OrbitControls
-            autoRotate
-            autoRotateSpeed={0.3}
-            enablePan
-            enableZoom
-            enableRotate
-            maxPolarAngle={Math.PI / 2.2}
-            minDistance={4}
-            maxDistance={15}
-          />
-
-          {/* Grid helper on the floor */}
-          <gridHelper args={[6, 12, '#1a1f2e', '#141820']} position={[0, -0.01, 0]} />
+          {sceneError ? (
+            <TestCube />
+          ) : (
+            <SceneContent data={data} onHover={setHoverInfo} />
+          )}
         </Canvas>
 
-        {/* HTML axis labels (no worker-dependent Text component) */}
+        {/* HTML axis labels */}
         <div className="pointer-events-none absolute bottom-8 left-1/2 -translate-x-1/2 font-mono text-[8px] text-text-muted/50 sm:text-[9px]">
           ← OTM Put — Moneyness — OTM Call →
         </div>
@@ -246,13 +277,19 @@ export default function VolatilitySurfaceChart({ currency }: Props) {
         )}
 
         {/* Legend */}
-        <div className="absolute bottom-2 right-2 flex items-center gap-1 rounded border border-border-default/50 bg-bg-tertiary/80 px-2 py-1 font-mono text-[8px] text-text-muted backdrop-blur-sm sm:text-[9px]">
-          <span className="inline-block h-2 w-2 rounded-sm" style={{ background: '#1a6baa' }} />
-          Low IV
-          <span className="inline-block h-2 w-2 rounded-sm" style={{ background: '#55a630' }} />
-          Mid
-          <span className="inline-block h-2 w-2 rounded-sm" style={{ background: '#c1121f' }} />
-          High IV
+        <div className="absolute bottom-2 right-2 flex items-center gap-2.5 rounded border border-border-default/50 bg-bg-tertiary/80 px-2.5 py-1 font-mono text-[8px] text-text-muted backdrop-blur-sm sm:gap-3 sm:px-3 sm:text-[9px]">
+          <span className="flex items-center gap-1">
+            <span className="inline-block h-2 w-2 rounded-sm" style={{ background: '#1a6baa' }} />
+            Low IV
+          </span>
+          <span className="flex items-center gap-1">
+            <span className="inline-block h-2 w-2 rounded-sm" style={{ background: '#55a630' }} />
+            Mid
+          </span>
+          <span className="flex items-center gap-1">
+            <span className="inline-block h-2 w-2 rounded-sm" style={{ background: '#c1121f' }} />
+            High IV
+          </span>
         </div>
       </div>
     </div>
