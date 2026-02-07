@@ -9,6 +9,7 @@ export default function SignInButton() {
   return (
     <>
       <button
+        data-auth-trigger
         onClick={() => setShowModal(true)}
         className="rounded-md border border-border-default bg-bg-secondary px-2.5 py-1 text-[10px] font-medium text-text-muted transition-colors hover:border-border-hover hover:text-text-primary sm:text-[11px]"
       >

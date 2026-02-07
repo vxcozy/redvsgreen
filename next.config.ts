@@ -15,7 +15,7 @@ const securityHeaders = [
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob: https://lh3.googleusercontent.com https://pbs.twimg.com https://api.dicebear.com",
       "font-src 'self' data:",
-      "connect-src 'self' https://api.binance.com https://coins.llama.fi https://api.alternative.me https://api.coingecko.com https://www.deribit.com",
+      "connect-src 'self' https://api.binance.com https://coins.llama.fi https://api.alternative.me https://api.coingecko.com https://www.deribit.com wss://*.pusher.com https://sockjs.pusher.com https://sockjs-*.pusher.com",
       "worker-src 'self' blob:",
       "frame-src 'none'",
     ].join('; '),

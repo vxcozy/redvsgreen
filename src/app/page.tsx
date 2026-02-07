@@ -4,6 +4,7 @@ import { DashboardProvider } from '@/context/DashboardContext';
 import Header from '@/components/layout/Header';
 import Dashboard from '@/components/layout/Dashboard';
 import Footer from '@/components/layout/Footer';
+import Trollbox from '@/components/trollbox/Trollbox';
 
 export default function Home() {
   return (
@@ -15,6 +16,7 @@ export default function Home() {
         </main>
         <Footer />
       </div>
+      <Trollbox />
     </DashboardProvider>
   );
 }
