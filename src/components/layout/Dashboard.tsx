@@ -16,12 +16,14 @@ import CandlestickChart from '@/components/charts/CandlestickChart';
 import StreakTimeline from '@/components/charts/StreakTimeline';
 import RSIChart from '@/components/charts/RSIChart';
 import ATRChart from '@/components/charts/ATRChart';
+import VolatilityChart from '@/components/charts/VolatilityChart';
 import VolumeChart from '@/components/charts/VolumeChart';
 import FearGreedChart from '@/components/charts/FearGreedChart';
 import StreakHistogram from '@/components/charts/StreakHistogram';
 import HeatmapChart from '@/components/charts/HeatmapChart';
 import LazyComparisonChart from '@/components/charts/LazyComparisonChart';
 import CycleTimelineChart from '@/components/charts/CycleTimelineChart';
+import LazyVolatilitySurface from '@/components/charts/LazyVolatilitySurface';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import SkeletonCard from '@/components/ui/SkeletonCard';
 
@@ -30,7 +32,7 @@ export default function Dashboard() {
   const { data: candles, loading, error } = useBinanceKlines(state.asset, state.timeRange);
   const { data: fearGreedData } = useFearGreed();
   const { stats } = useStreakAnalysis(candles);
-  const { sma50, sma200, rsi, bollingerBands, atr } = useTechnicalIndicators(candles);
+  const { sma50, sma200, rsi, bollingerBands, atr, volatility } = useTechnicalIndicators(candles);
 
   // Cycle analysis (always uses ALL-time data)
   const { cycleAnalysis, allCandles: cycleCandles } = useCycleAnalysis(state.asset);
@@ -180,13 +182,22 @@ export default function Dashboard() {
         />
       )}
 
-      {state.overlays.heatmap && <HeatmapChart candles={candles} />}
+      {state.overlays.volatility && volatility.length > 0 && (
+        <VolatilityChart data={volatility} />
+      )}
+
+      {state.overlays.heatmap && <HeatmapChart candles={candles} timeRange={state.timeRange} />}
+
+      {state.overlays.volatilitySurface && (
+        <LazyVolatilitySurface currency={state.asset} />
+      )}
 
       {state.overlays.btcEthComparison && (
         <LazyComparisonChart
           asset={state.asset}
           currentStats={stats}
           timeRange={state.timeRange}
+          candles={candles}
         />
       )}
 

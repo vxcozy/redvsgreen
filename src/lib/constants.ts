@@ -36,6 +36,8 @@ export const COLORS = {
     rsi: '#a855f7',
     volume: '#64748b',
     atr: '#f59e0b',
+    volatility: '#ec4899',
+    volSurface: '#8b5cf6',
   },
   text: {
     primary: '#e8ecf4',
@@ -71,6 +73,8 @@ export const DEFAULT_OVERLAYS = {
   heatmap: false,
   atr: false,
   cycleTimeline: false,
+  volatility: false,
+  volatilitySurface: false,
 } as const;
 
 export const TIME_RANGE_DAYS: Record<string, number> = {

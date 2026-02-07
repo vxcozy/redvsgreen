@@ -28,6 +28,8 @@ const OVERLAY_GROUPS: { title: string; items: ToggleItem[] }[] = [
       { key: 'fearGreed', label: 'Fear & Greed', color: '#eab308' },
       { key: 'streakHistogram', label: 'Distribution', color: '#8b5cf6' },
       { key: 'heatmap', label: 'Heatmap', color: '#f97316' },
+      { key: 'volatility', label: 'Volatility', color: '#ec4899' },
+      { key: 'volatilitySurface', label: 'Vol Surface 3D', color: '#8b5cf6' },
     ],
   },
   {

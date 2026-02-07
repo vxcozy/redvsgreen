@@ -132,7 +132,9 @@ export type OverlayKey =
   | 'btcEthComparison'
   | 'heatmap'
   | 'atr'
-  | 'cycleTimeline';
+  | 'cycleTimeline'
+  | 'volatility'
+  | 'volatilitySurface';
 
 export type Asset = 'BTC' | 'ETH';
 export type TimeRange = '3M' | '6M' | '1Y' | '2Y' | 'ALL';

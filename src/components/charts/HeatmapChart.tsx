@@ -1,11 +1,13 @@
 'use client';
 
 import { useMemo, useState, useRef, useEffect, useCallback } from 'react';
-import { OHLCV } from '@/lib/types';
+import { OHLCV, TimeRange } from '@/lib/types';
+import { TIME_RANGE_DAYS } from '@/lib/constants';
 import SectionHeader from '@/components/ui/SectionHeader';
 
 interface Props {
   candles: OHLCV[];
+  timeRange?: TimeRange;
 }
 
 interface DayData {
@@ -39,7 +41,7 @@ function formatDate(dateStr: string): string {
   });
 }
 
-export default function HeatmapChart({ candles }: Props) {
+export default function HeatmapChart({ candles, timeRange = 'ALL' }: Props) {
   const [modal, setModal] = useState<ModalState | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
@@ -73,8 +75,11 @@ export default function HeatmapChart({ candles }: Props) {
       if (abs > maxAbs) maxAbs = abs;
     }
 
-    return { weeks: weeksArr.slice(-52), maxAbsChange: maxAbs };
-  }, [candles]);
+    // Determine number of weeks to show based on timeRange
+    const days = TIME_RANGE_DAYS[timeRange] ?? 9999;
+    const maxWeeks = days >= 9999 ? weeksArr.length : Math.ceil(days / 7);
+    return { weeks: weeksArr.slice(-maxWeeks), maxAbsChange: maxAbs };
+  }, [candles, timeRange]);
 
   function getColor(pct: number): string {
     const intensity = Math.min(Math.abs(pct) / maxAbsChange, 1);

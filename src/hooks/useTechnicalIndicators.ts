@@ -8,6 +8,7 @@ import {
   calculateBollingerBands,
   calculateATR,
 } from '@/lib/analysis/indicators';
+import { calculateHistoricalVolatility } from '@/lib/analysis/volatility';
 
 export function useTechnicalIndicators(candles: OHLCV[]) {
   const sma50 = useMemo(() => calculateSMA(candles, 50), [candles]);
@@ -18,8 +19,9 @@ export function useTechnicalIndicators(candles: OHLCV[]) {
     [candles]
   );
   const atr = useMemo(() => calculateATR(candles, 14), [candles]);
+  const volatility = useMemo(() => calculateHistoricalVolatility(candles, 30), [candles]);
 
-  return { sma50, sma200, rsi, bollingerBands, atr };
+  return { sma50, sma200, rsi, bollingerBands, atr, volatility };
 }
 
 export type TechnicalIndicators = {
@@ -28,4 +30,5 @@ export type TechnicalIndicators = {
   rsi: IndicatorPoint[];
   bollingerBands: BollingerPoint[];
   atr: IndicatorPoint[];
+  volatility: IndicatorPoint[];
 };
