@@ -38,7 +38,7 @@ export default function CurrentStreakCard({ streak, asset }: Props) {
           <span className={`text-2xl font-black font-[var(--font-display)] sm:text-4xl ${textGlow}`} style={{ color: colorStyle }}>
             {streak.length}
           </span>
-          <span className="text-xs font-medium text-text-secondary sm:text-sm">
+          <span className="text-[10px] font-medium text-text-secondary sm:text-[11px]">
             {label} {streak.length === 1 ? 'day' : 'days'}
           </span>
         </div>
