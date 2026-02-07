@@ -1,8 +1,8 @@
 'use client';
 
 import { useMemo, useRef, useState, useCallback } from 'react';
-import { Canvas, useFrame, ThreeEvent } from '@react-three/fiber';
-import { OrbitControls, Text } from '@react-three/drei';
+import { Canvas, ThreeEvent } from '@react-three/fiber';
+import { OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
 import type { VolSurfaceData } from '@/app/api/volatility-surface/route';
 import { useVolatilitySurface } from '@/hooks/useVolatilitySurface';
@@ -33,7 +33,6 @@ function SurfaceMesh({ data, onHover }: SurfaceMeshProps) {
     if (pts.length < 4) return { geometry: null, minIV: 0, maxIV: 100 };
 
     // Build a regular grid via binning
-    // X-axis: moneyness (0.5 → 2.0), Z-axis: days to expiry
     const moneySet = [...new Set(pts.map((p) => Math.round(p.moneyness * 100) / 100))].sort(
       (a, b) => a - b,
     );
@@ -47,7 +46,6 @@ function SurfaceMesh({ data, onHover }: SurfaceMeshProps) {
     for (const p of pts) {
       const mk = Math.round(p.moneyness * 100) / 100;
       const key = `${mk}:${p.daysToExpiry}`;
-      // Keep highest IV if duplicates
       const existing = lookup.get(key);
       if (!existing || p.iv > existing) lookup.set(key, p.iv);
     }
@@ -73,7 +71,6 @@ function SurfaceMesh({ data, onHover }: SurfaceMeshProps) {
         const key = `${moneySet[xi]}:${dteSet[zi]}`;
         const iv = lookup.get(key);
 
-        // Map to geometry coords: x goes -3 to 3, z goes -3 to 3
         const xPos = -3 + (xi / (width - 1)) * 6;
         const zPos = -3 + (zi / (depth - 1)) * 6;
 
@@ -84,7 +81,6 @@ function SurfaceMesh({ data, onHover }: SurfaceMeshProps) {
           yPos = ((iv - minIV) / (maxIV - minIV || 1)) * 3;
           color = ivToColor(iv, minIV, maxIV);
         } else {
-          // Interpolate from neighbours
           yPos = 0.5;
         }
 
@@ -107,7 +103,6 @@ function SurfaceMesh({ data, onHover }: SurfaceMeshProps) {
       e.stopPropagation();
 
       const point = e.point;
-      // Reverse map from geometry space to data space
       const moneySet = [...new Set(data.points.map((p) => Math.round(p.moneyness * 100) / 100))].sort(
         (a, b) => a - b,
       );
@@ -151,44 +146,6 @@ function SurfaceMesh({ data, onHover }: SurfaceMeshProps) {
         metalness={0.1}
       />
     </mesh>
-  );
-}
-
-// ─── Axis labels ──────────────────────────────────────────────
-function AxisLabels() {
-  return (
-    <>
-      {/* X axis: Moneyness */}
-      <Text position={[0, -0.5, 4]} fontSize={0.25} color="#7a8599" anchorX="center">
-        ← OTM Put — Moneyness — OTM Call →
-      </Text>
-      {/* Z axis: DTE */}
-      <Text position={[-4, -0.5, 0]} fontSize={0.25} color="#7a8599" anchorX="center" rotation={[0, Math.PI / 2, 0]}>
-        Days to Expiry →
-      </Text>
-      {/* Y axis: IV */}
-      <Text position={[-3.5, 2, -3.5]} fontSize={0.2} color="#7a8599" anchorX="center">
-        IV %
-      </Text>
-    </>
-  );
-}
-
-// ─── Slow rotation ──────────────────────────────────────────
-function AutoRotate() {
-  const controlsRef = useRef<{ autoRotate: boolean; autoRotateSpeed: number } | null>(null);
-  return (
-    <OrbitControls
-      ref={controlsRef as React.Ref<never>}
-      autoRotate
-      autoRotateSpeed={0.3}
-      enablePan
-      enableZoom
-      enableRotate
-      maxPolarAngle={Math.PI / 2.2}
-      minDistance={4}
-      maxDistance={15}
-    />
   );
 }
 
@@ -244,12 +201,32 @@ export default function VolatilitySurfaceChart({ currency }: Props) {
           <pointLight position={[-5, 5, -5]} intensity={0.3} />
 
           <SurfaceMesh data={data} onHover={setHoverInfo} />
-          <AxisLabels />
-          <AutoRotate />
+
+          <OrbitControls
+            autoRotate
+            autoRotateSpeed={0.3}
+            enablePan
+            enableZoom
+            enableRotate
+            maxPolarAngle={Math.PI / 2.2}
+            minDistance={4}
+            maxDistance={15}
+          />
 
           {/* Grid helper on the floor */}
           <gridHelper args={[6, 12, '#1a1f2e', '#141820']} position={[0, -0.01, 0]} />
         </Canvas>
+
+        {/* HTML axis labels (no worker-dependent Text component) */}
+        <div className="pointer-events-none absolute bottom-8 left-1/2 -translate-x-1/2 font-mono text-[8px] text-text-muted/50 sm:text-[9px]">
+          ← OTM Put — Moneyness — OTM Call →
+        </div>
+        <div className="pointer-events-none absolute bottom-1/2 left-1 origin-center -rotate-90 font-mono text-[8px] text-text-muted/50 sm:text-[9px]">
+          Days to Expiry →
+        </div>
+        <div className="pointer-events-none absolute left-2 top-10 font-mono text-[8px] text-text-muted/50 sm:text-[9px]">
+          IV %
+        </div>
 
         {/* Hover tooltip */}
         {hoverInfo && (
