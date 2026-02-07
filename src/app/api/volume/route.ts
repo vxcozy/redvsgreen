@@ -41,8 +41,8 @@ export async function GET(request: NextRequest) {
 
     if (!res.ok) {
       return NextResponse.json(
-        { error: `CoinGecko returned HTTP ${res.status}` },
-        { status: res.status },
+        { error: 'Data source temporarily unavailable' },
+        { status: 502 },
       );
     }
 
@@ -97,7 +97,7 @@ export async function GET(request: NextRequest) {
         'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
       },
     });
-  } catch (err) {
+  } catch {
     return NextResponse.json(
       { error: 'Failed to fetch volume data' },
       { status: 500 },

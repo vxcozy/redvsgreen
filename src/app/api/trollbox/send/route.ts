@@ -9,24 +9,31 @@ const RATE_LIMIT_MS = 2_000;
 
 const MAX_MESSAGE_LENGTH = 500;
 
-// Strip HTML tags to prevent XSS (messages rendered as plain text anyway)
+// Sanitize: strip control chars and trim.
+// No HTML encoding needed — React JSX escapes all text content automatically.
+// Belt-and-suspenders: strip anything that looks like an HTML tag.
 function sanitize(text: string): string {
   return text
-    .replace(/<[^>]*>/g, '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
+    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '') // strip control chars
+    .replace(/<[^>]*>?/g, '')                             // strip HTML tags (including unclosed)
     .trim();
 }
 
 export async function POST(request: NextRequest) {
-  // 1. Auth check
+  // 1. CSRF check — verify request originates from our own domain
+  const origin = request.headers.get('origin');
+  const host = request.headers.get('host');
+  if (!origin || !host || new URL(origin).host !== host) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
+
+  // 2. Auth check
   const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  // 2. Rate limit per user
+  // 3. Rate limit per user
   const now = Date.now();
   const lastSent = rateLimitMap.get(session.user.id);
   if (lastSent && now - lastSent < RATE_LIMIT_MS) {
@@ -36,7 +43,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // 3. Parse and validate body
+  // 4. Parse and validate body
   let body: { content?: string };
   try {
     body = await request.json();
@@ -60,20 +67,21 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // 4. Update rate limit timestamp
-  rateLimitMap.set(session.user.id, now);
-
-  // 5. Store in DB
+  // 5. Store in DB (rate limit updated AFTER success to avoid penalizing failed writes)
+  const userName = (session.user.name || 'Anon').slice(0, 100); // M3: bound userName length
   const message = await prisma.message.create({
     data: {
       content,
       userId: session.user.id,
-      userName: session.user.name || 'Anon',
+      userName,
       userImage: session.user.image || null,
     },
   });
 
-  // 6. Broadcast via Pusher
+  // 6. Update rate limit timestamp only after successful DB write
+  rateLimitMap.set(session.user.id, now);
+
+  // 7. Broadcast via Pusher
   const event = {
     id: message.id,
     content: message.content,

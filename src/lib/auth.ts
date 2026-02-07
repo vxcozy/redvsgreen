@@ -35,6 +35,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       return baseUrl;
     },
   },
-  // Trust the X-Forwarded-Host header from Vercel's proxy
+  // Required for Vercel deployments where X-Forwarded-Host is set by the edge proxy.
+  // If self-hosting behind a different reverse proxy, set AUTH_URL env var instead.
   trustHost: true,
 });

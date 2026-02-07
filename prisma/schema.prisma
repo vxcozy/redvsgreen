@@ -72,7 +72,7 @@ model Message {
   id        String   @id @default(cuid())
   content   String   @db.VarChar(500)
   userId    String
-  userName  String
+  userName  String   @db.VarChar(100)
   userImage String?
   createdAt DateTime @default(now())
 

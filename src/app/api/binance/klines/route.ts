@@ -180,7 +180,7 @@ export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
   const symbol = searchParams.get('symbol') || 'BTCUSDT';
   const interval = searchParams.get('interval') || '1d';
-  const days = parseInt(searchParams.get('days') || '365', 10);
+  const rawDays = parseInt(searchParams.get('days') || '365', 10);
 
   if (!ALLOWED_SYMBOLS.has(symbol)) {
     return NextResponse.json({ error: 'Invalid symbol' }, { status: 400 });
@@ -188,6 +188,10 @@ export async function GET(request: NextRequest) {
   if (!ALLOWED_INTERVALS.has(interval)) {
     return NextResponse.json({ error: 'Invalid interval' }, { status: 400 });
   }
+  if (isNaN(rawDays) || rawDays < 1) {
+    return NextResponse.json({ error: 'Invalid days parameter' }, { status: 400 });
+  }
+  const days = Math.min(rawDays, 9999);
 
   try {
     const now = Date.now();
@@ -221,7 +225,7 @@ export async function GET(request: NextRequest) {
       { error: 'All data sources unavailable (Binance Global + DeFiLlama)' },
       { status: 503 },
     );
-  } catch (err) {
+  } catch {
     return NextResponse.json(
       { error: 'Failed to fetch kline data' },
       { status: 500 },

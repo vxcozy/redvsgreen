@@ -22,8 +22,14 @@ function isRateLimited(ip: string): boolean {
 }
 
 // Periodically clean stale entries (every 5 minutes worth of calls)
+// Hard cap prevents OOM under distributed attacks targeting many IPs
+const MAX_MAP_SIZE = 10_000;
 let cleanupCounter = 0;
 function maybeCleanup() {
+  if (rateLimitMap.size > MAX_MAP_SIZE) {
+    rateLimitMap.clear();
+    return;
+  }
   cleanupCounter++;
   if (cleanupCounter < 300) return;
   cleanupCounter = 0;
@@ -44,9 +50,11 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // On Vercel, x-real-ip is set by the edge proxy and cannot be spoofed.
+  // x-forwarded-for can be manipulated by the client — use last entry (proxy-added) as fallback.
   const ip =
-    request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
     request.headers.get('x-real-ip') ||
+    request.headers.get('x-forwarded-for')?.split(',').pop()?.trim() ||
     'unknown';
 
   maybeCleanup();

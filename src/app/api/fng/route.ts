@@ -10,8 +10,8 @@ export async function GET() {
 
     if (!res.ok) {
       return NextResponse.json(
-        { error: `Fear & Greed API error: ${res.status}` },
-        { status: res.status }
+        { error: 'Data source temporarily unavailable' },
+        { status: 502 }
       );
     }
 
@@ -21,7 +21,7 @@ export async function GET() {
         'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=7200',
       },
     });
-  } catch (err) {
+  } catch {
     return NextResponse.json(
       { error: 'Failed to fetch Fear & Greed data' },
       { status: 500 }
