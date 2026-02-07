@@ -454,6 +454,7 @@ export function computeCycleAnalysis(
   const bullCycles = modernCycles.filter((c) => c.direction === 'bull');
   const bearCycles = modernCycles.filter((c) => c.direction === 'bear');
 
+  // Compute per-asset durations for display stats
   const avgBullDuration =
     bullCycles.length > 0
       ? bullCycles.reduce((s, c) => s + c.durationDays, 0) / bullCycles.length
@@ -462,6 +463,24 @@ export function computeCycleAnalysis(
     bearCycles.length > 0
       ? bearCycles.reduce((s, c) => s + c.durationDays, 0) / bearCycles.length
       : 0;
+
+  // For PROJECTIONS, always use BTC halving-driven cycle durations.
+  // All crypto cycles are fundamentally driven by BTC halvings (~4yr cycle),
+  // so ETH projections should use BTC timing, not ETH's own shorter history.
+  const btcKnownCycles = buildCycles(KNOWN_BTC_POINTS).filter(
+    // Exclude Cycle 1 (pre-Binance era, $2 → $1,163)
+    (c) => c.from.date >= '2015-01-01'
+  );
+  const btcBullCycles = btcKnownCycles.filter((c) => c.direction === 'bull');
+  const btcBearCycles = btcKnownCycles.filter((c) => c.direction === 'bear');
+  const projBullDuration =
+    btcBullCycles.length > 0
+      ? btcBullCycles.reduce((s, c) => s + c.durationDays, 0) / btcBullCycles.length
+      : avgBullDuration;
+  const projBearDuration =
+    btcBearCycles.length > 0
+      ? btcBearCycles.reduce((s, c) => s + c.durationDays, 0) / btcBearCycles.length
+      : avgBearDuration;
 
   // For return/drawdown stats, only use cycles where BOTH endpoints have
   // real candle data. Cycle 2 bull ($152→$19,783) has a pre-data start
@@ -639,21 +658,23 @@ export function computeCycleAnalysis(
   });
 
   // Phase progress: how far into the avg cycle duration we are
+  // Use BTC-based durations for progress too (consistent with projections)
   const daysSincePhaseStart = daysBetween(today, phaseAnchor.date);
-  const avgDuration = currentPhase === 'bull' ? avgBullDuration : avgBearDuration;
+  const avgDuration = currentPhase === 'bull' ? projBullDuration : projBearDuration;
   const phaseProgress = avgDuration > 0
     ? Math.min(daysSincePhaseStart / avgDuration, 1.5)
     : 0;
 
   // Compute projected cycle top/bottom dates from the phase anchor
+  // Always uses BTC halving-driven durations for consistency across assets
   const { projectedTop, projectedBottom } = computeProjections(
     currentPhase,
     phaseAnchor,
     today,
-    avgBullDuration,
-    avgBearDuration,
-    bullCycles.length,
-    bearCycles.length
+    projBullDuration,
+    projBearDuration,
+    btcBullCycles.length,
+    btcBearCycles.length
   );
 
   // Final safety: clamp any NaN/Infinity values

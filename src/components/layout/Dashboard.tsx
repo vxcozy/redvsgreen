@@ -121,8 +121,17 @@ export default function Dashboard() {
       </div>
 
       {/* Row 2.5: Cycle Position Card (always visible) */}
-      {cycleAnalysis && (
+      {cycleAnalysis ? (
         <CyclePositionCard analysis={cycleAnalysis} asset={state.asset} />
+      ) : (
+        <div className="col-span-full rounded-lg border border-border-default bg-bg-card p-3 sm:p-5">
+          <div className="flex items-center gap-2">
+            <div className="h-3 w-3 animate-spin rounded-full border-2 border-text-muted/30 border-t-text-muted" />
+            <span className="text-[9px] uppercase tracking-[0.15em] text-text-muted sm:text-[10px]">
+              Loading cycle data...
+            </span>
+          </div>
+        </div>
       )}
 
       {/* Row 3: Candlestick chart */}
@@ -136,6 +145,9 @@ export default function Dashboard() {
         showBollinger={state.overlays.bollingerBands}
       />
 
+      {/* RSI directly below price chart */}
+      {state.overlays.rsi && <RSIChart data={rsi} />}
+
       {/* Row 4: Streak timeline */}
       <StreakTimeline streaks={stats.allStreaks} />
 
@@ -143,13 +155,10 @@ export default function Dashboard() {
       <OverlayTogglePanel />
 
       {/* Row 6: Conditional panels */}
-      <div className="grid grid-cols-1 gap-2 sm:gap-4 md:grid-cols-2">
-        {state.overlays.rsi && <RSIChart data={rsi} />}
-        {state.overlays.volume && <VolumeChart candles={candles} asset={state.asset} timeRange={state.timeRange} />}
-      </div>
+      {state.overlays.volume && <VolumeChart candles={candles} asset={state.asset} timeRange={state.timeRange} />}
 
       {state.overlays.fearGreed && fearGreedData.length > 0 && (
-        <FearGreedChart data={fearGreedData} />
+        <FearGreedChart data={fearGreedData} timeRange={state.timeRange} />
       )}
 
       {state.overlays.streakHistogram && (

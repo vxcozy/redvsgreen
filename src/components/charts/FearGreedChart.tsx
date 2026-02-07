@@ -9,18 +9,30 @@ import {
   ResponsiveContainer,
   ReferenceLine,
 } from 'recharts';
-import { FearGreedEntry } from '@/lib/types';
+import { useMemo } from 'react';
+import { FearGreedEntry, TimeRange } from '@/lib/types';
 
 interface Props {
   data: FearGreedEntry[];
+  timeRange: TimeRange;
 }
 
-export default function FearGreedChart({ data }: Props) {
-  const chartData = [...data].reverse().map((d) => ({
-    date: d.date,
-    value: d.value,
-    label: d.classification,
-  }));
+const TIME_RANGE_DAYS: Record<TimeRange, number> = {
+  '1Y': 365,
+  '2Y': 730,
+  ALL: Infinity,
+};
+
+export default function FearGreedChart({ data, timeRange }: Props) {
+  const chartData = useMemo(() => {
+    const maxDays = TIME_RANGE_DAYS[timeRange];
+    const sliced = maxDays === Infinity ? data : data.slice(0, maxDays);
+    return [...sliced].reverse().map((d) => ({
+      date: d.date,
+      value: d.value,
+      label: d.classification,
+    }));
+  }, [data, timeRange]);
 
   return (
     <div className="rounded-lg border border-border-default bg-bg-card p-2 sm:p-3">
