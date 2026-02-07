@@ -387,7 +387,8 @@ function computeProjections(
 
 export function computeCycleAnalysis(
   candles: OHLCV[],
-  asset: Asset
+  asset: Asset,
+  btcCandles?: OHLCV[]
 ): CycleAnalysis | null {
   if (candles.length < 30) return null;
 
@@ -666,14 +667,57 @@ export function computeCycleAnalysis(
     : 0;
 
   // Compute projected cycle top/bottom dates.
-  // ALL assets use BTC's anchor point (last known BTC trough) for projections
-  // because all crypto cycles are fundamentally driven by BTC halvings.
+  // ALL assets use BTC's smart phase detection for projections because
+  // all crypto cycles are fundamentally driven by BTC halvings.
   // This ensures ETH shows the same Est. Cycle Top / Bottom as BTC.
-  const btcCurrentTrough = KNOWN_BTC_POINTS[KNOWN_BTC_POINTS.length - 1]; // 2022-11-21
-  const projectionAnchor = btcCurrentTrough.type === 'trough'
-    ? btcCurrentTrough
-    : phaseAnchor; // fallback if BTC's last known point isn't a trough
-  const projectionPhase = projectionAnchor.type === 'trough' ? 'bull' : 'bear';
+  let projectionPhase: 'bull' | 'bear';
+  let projectionAnchor: CyclePoint;
+
+  if (asset === 'BTC' || !btcCandles || btcCandles.length === 0) {
+    // For BTC (or if no BTC candles provided), use this asset's own smart detection
+    projectionPhase = currentPhase;
+    projectionAnchor = phaseAnchor;
+  } else {
+    // For non-BTC assets, run BTC's smart phase detection to get BTC's anchor
+    const btcKnownResolved = resolveKnownPoints(btcCandles, KNOWN_BTC_POINTS);
+    const btcLastKnown = btcKnownResolved.length > 0
+      ? btcKnownResolved[btcKnownResolved.length - 1]
+      : null;
+    const btcNewPoints = detectNewPoints(btcCandles, btcLastKnown);
+    const btcAllPoints = [...btcKnownResolved, ...btcNewPoints].sort((a, b) => {
+      if (a.index === -1 && b.index === -1) return a.date.localeCompare(b.date);
+      if (a.index === -1) return -1;
+      if (b.index === -1) return 1;
+      return a.index - b.index;
+    });
+
+    const btcLastConfirmed = btcAllPoints[btcAllPoints.length - 1];
+    const btcNaivePhase: 'bull' | 'bear' =
+      btcLastConfirmed.type === 'trough' ? 'bull' : 'bear';
+    const btcTodayClose = btcCandles[btcCandles.length - 1].close;
+
+    if (btcNaivePhase === 'bull') {
+      const btcRunningPeak = findRunningPeakSince(btcCandles, btcLastConfirmed.date);
+      const btcDrawdown = (btcRunningPeak.price - btcTodayClose) / btcRunningPeak.price;
+      if (btcDrawdown >= BEAR_THRESHOLD) {
+        projectionPhase = 'bear';
+        projectionAnchor = btcRunningPeak;
+      } else {
+        projectionPhase = 'bull';
+        projectionAnchor = btcLastConfirmed;
+      }
+    } else {
+      const btcRunningTrough = findRunningTroughSince(btcCandles, btcLastConfirmed.date);
+      const btcRally = (btcTodayClose - btcRunningTrough.price) / btcRunningTrough.price;
+      if (btcRally >= BEAR_THRESHOLD) {
+        projectionPhase = 'bull';
+        projectionAnchor = btcRunningTrough;
+      } else {
+        projectionPhase = 'bear';
+        projectionAnchor = btcLastConfirmed;
+      }
+    }
+  }
 
   const { projectedTop, projectedBottom } = computeProjections(
     projectionPhase,
