@@ -1,11 +1,14 @@
 'use client';
 
+import { useMemo } from 'react';
+import { Reorder, useDragControls } from 'framer-motion';
 import { useDashboard } from '@/context/DashboardContext';
 import { useBinanceKlines } from '@/hooks/useBinanceKlines';
 import { useFearGreed } from '@/hooks/useFearGreed';
 import { useStreakAnalysis } from '@/hooks/useStreakAnalysis';
 import { useTechnicalIndicators } from '@/hooks/useTechnicalIndicators';
 import { useCycleAnalysis } from '@/hooks/useCycleAnalysis';
+import { usePersistedLayout } from '@/hooks/usePersistedLayout';
 
 import CurrentStreakCard from '@/components/cards/CurrentStreakCard';
 import CyclePositionCard from '@/components/cards/CyclePositionCard';
@@ -26,6 +29,42 @@ import CycleTimelineChart from '@/components/charts/CycleTimelineChart';
 import LazyVolatilitySurface from '@/components/charts/LazyVolatilitySurface';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import SkeletonCard from '@/components/ui/SkeletonCard';
+import CardWrapper from '@/components/ui/CardWrapper';
+
+import type { CardId, CardSize } from '@/lib/constants';
+
+// ─── Reorder Item wrapper (each card needs its own drag controls) ─────
+function DraggableCard({
+  cardId,
+  children,
+  size,
+  onSizeChange,
+}: {
+  cardId: CardId;
+  children: React.ReactNode;
+  size: CardSize;
+  onSizeChange: (s: CardSize) => void;
+}) {
+  const controls = useDragControls();
+
+  return (
+    <Reorder.Item
+      value={cardId}
+      dragListener={false}
+      dragControls={controls}
+      transition={{ duration: 0.25 }}
+      className="list-none"
+    >
+      <CardWrapper
+        size={size}
+        onSizeChange={onSizeChange}
+        dragControls={controls}
+      >
+        {children}
+      </CardWrapper>
+    </Reorder.Item>
+  );
+}
 
 export default function Dashboard() {
   const { state } = useDashboard();
@@ -33,9 +72,33 @@ export default function Dashboard() {
   const { data: fearGreedData } = useFearGreed();
   const { stats } = useStreakAnalysis(candles);
   const { sma50, sma200, rsi, bollingerBands, atr, volatility } = useTechnicalIndicators(candles);
-
-  // Cycle analysis (always uses ALL-time data)
   const { cycleAnalysis, allCandles: cycleCandles } = useCycleAnalysis(state.asset);
+  const { order, reorder, getCardSize, setCardSize, hydrated } = usePersistedLayout();
+
+  // Card visibility map — only render cards that should be visible
+  const visibleCards = useMemo(() => {
+    const vis = new Set<CardId>();
+    // Always-visible cards
+    vis.add('cyclePosition');
+    vis.add('priceChart');
+    vis.add('streakTimeline');
+    vis.add('overlayPanel');
+    vis.add('streakRecords');
+
+    // Overlay-dependent cards
+    if (state.overlays.rsi) vis.add('rsi');
+    if (state.overlays.atr) vis.add('atr');
+    if (state.overlays.volume) vis.add('volume');
+    if (state.overlays.fearGreed) vis.add('fearGreed');
+    if (state.overlays.streakHistogram) vis.add('streakHistogram');
+    if (state.overlays.cycleTimeline && cycleAnalysis && cycleCandles.length > 0) vis.add('cycleTimeline');
+    if (state.overlays.volatility && volatility.length > 0) vis.add('volatility');
+    if (state.overlays.heatmap) vis.add('heatmap');
+    if (state.overlays.volatilitySurface) vis.add('volatilitySurface');
+    if (state.overlays.btcEthComparison) vis.add('btcEthComparison');
+
+    return vis;
+  }, [state.overlays, cycleAnalysis, cycleCandles, volatility]);
 
   if (error) {
     return (
@@ -70,9 +133,121 @@ export default function Dashboard() {
   const greenStreakCount = stats.allStreaks.filter((s) => s.type === 'green').length;
   const redStreakCount = stats.allStreaks.filter((s) => s.type === 'red').length;
 
+  // ─── Card renderer (stats guaranteed non-null after loading check) ───
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  const s = stats!;
+  function renderCard(cardId: CardId): React.ReactNode {
+    switch (cardId) {
+      case 'cyclePosition':
+        return cycleAnalysis ? (
+          <CyclePositionCard analysis={cycleAnalysis} asset={state.asset} />
+        ) : (
+          <div className="col-span-full rounded-lg border border-border-default bg-bg-card p-3 sm:p-5">
+            <div className="flex items-center gap-2">
+              <div className="h-3 w-3 animate-spin rounded-full border-2 border-text-muted/30 border-t-text-muted" />
+              <span className="text-[9px] uppercase tracking-[0.15em] text-text-muted sm:text-[10px]">
+                Loading cycle data...
+              </span>
+            </div>
+          </div>
+        );
+
+      case 'priceChart':
+        return (
+          <CandlestickChart
+            candles={candles}
+            sma50={sma50}
+            sma200={sma200}
+            bollingerBands={bollingerBands}
+            showSma50={state.overlays.sma50}
+            showSma200={state.overlays.sma200}
+            showBollinger={state.overlays.bollingerBands}
+          />
+        );
+
+      case 'rsi':
+        return <RSIChart data={rsi} />;
+
+      case 'atr':
+        return <ATRChart data={atr} />;
+
+      case 'streakTimeline':
+        return <StreakTimeline streaks={s.allStreaks} />;
+
+      case 'overlayPanel':
+        return <OverlayTogglePanel />;
+
+      case 'volume':
+        return <VolumeChart candles={candles} asset={state.asset} timeRange={state.timeRange} />;
+
+      case 'fearGreed':
+        return fearGreedData.length > 0 ? (
+          <FearGreedChart data={fearGreedData} timeRange={state.timeRange} />
+        ) : null;
+
+      case 'streakHistogram':
+        return (
+          <StreakHistogram
+            greenDistribution={s.greenStreakDistribution}
+            redDistribution={s.redStreakDistribution}
+          />
+        );
+
+      case 'cycleTimeline':
+        return cycleAnalysis && cycleCandles.length > 0 ? (
+          <CycleTimelineChart
+            candles={cycleCandles}
+            analysis={cycleAnalysis}
+            asset={state.asset}
+          />
+        ) : null;
+
+      case 'volatility':
+        return <VolatilityChart data={volatility} />;
+
+      case 'heatmap':
+        return <HeatmapChart candles={candles} timeRange={state.timeRange} />;
+
+      case 'volatilitySurface':
+        return <LazyVolatilitySurface currency={state.asset} />;
+
+      case 'btcEthComparison':
+        return (
+          <LazyComparisonChart
+            asset={state.asset}
+            currentStats={s}
+            timeRange={state.timeRange}
+            candles={candles}
+          />
+        );
+
+      case 'streakRecords':
+        return (
+          <div className="grid grid-cols-1 gap-2 sm:gap-4 md:grid-cols-2">
+            <StreakRecordCard
+              title="Top Green Streaks"
+              streaks={s.topGreenStreaks}
+              variant="green"
+            />
+            <StreakRecordCard
+              title="Top Red Streaks"
+              streaks={s.topRedStreaks}
+              variant="red"
+            />
+          </div>
+        );
+
+      default:
+        return null;
+    }
+  }
+
+  // Filter to only visible cards
+  const visibleOrder = order.filter((id) => visibleCards.has(id));
+
   return (
     <div className="mx-auto max-w-[1440px] space-y-3 px-3 py-4 sm:space-y-4 sm:px-4 sm:py-6 md:px-6">
-      {/* Row 1: Stats cards */}
+      {/* Fixed: Stats cards row 1 */}
       <div className="grid grid-cols-2 gap-2 sm:gap-4 lg:grid-cols-4">
         <CurrentStreakCard streak={stats.currentStreak} asset={state.asset} />
         <StatsCard
@@ -95,7 +270,7 @@ export default function Dashboard() {
         />
       </div>
 
-      {/* Row 2: Averages */}
+      {/* Fixed: Stats cards row 2 */}
       <div className="grid grid-cols-2 gap-2 sm:gap-4 lg:grid-cols-4">
         <StatsCard
           label="Avg Green Streak"
@@ -123,97 +298,48 @@ export default function Dashboard() {
         />
       </div>
 
-      {/* Row 2.5: Cycle Position Card (always visible) */}
-      {cycleAnalysis ? (
-        <CyclePositionCard analysis={cycleAnalysis} asset={state.asset} />
+      {/* Draggable cards */}
+      {hydrated ? (
+        <Reorder.Group
+          axis="y"
+          values={visibleOrder}
+          onReorder={(newOrder) => {
+            // Merge reordered visible cards back with hidden cards
+            const hiddenInOrder = order.filter((id) => !visibleCards.has(id));
+            const full: CardId[] = [];
+            let vi = 0;
+            let hi = 0;
+            for (const id of order) {
+              if (visibleCards.has(id)) {
+                if (vi < newOrder.length) full.push(newOrder[vi++]);
+              } else {
+                full.push(hiddenInOrder[hi++]);
+              }
+            }
+            while (vi < newOrder.length) full.push(newOrder[vi++]);
+            while (hi < hiddenInOrder.length) full.push(hiddenInOrder[hi++]);
+            reorder(full);
+          }}
+          className="space-y-3 sm:space-y-4"
+        >
+          {visibleOrder.map((cardId) => (
+            <DraggableCard
+              key={cardId}
+              cardId={cardId}
+              size={getCardSize(cardId)}
+              onSizeChange={(s) => setCardSize(cardId, s)}
+            >
+              {renderCard(cardId)}
+            </DraggableCard>
+          ))}
+        </Reorder.Group>
       ) : (
-        <div className="col-span-full rounded-lg border border-border-default bg-bg-card p-3 sm:p-5">
-          <div className="flex items-center gap-2">
-            <div className="h-3 w-3 animate-spin rounded-full border-2 border-text-muted/30 border-t-text-muted" />
-            <span className="text-[9px] uppercase tracking-[0.15em] text-text-muted sm:text-[10px]">
-              Loading cycle data...
-            </span>
-          </div>
+        <div className="space-y-3 sm:space-y-4">
+          {visibleOrder.map((cardId) => (
+            <div key={cardId}>{renderCard(cardId)}</div>
+          ))}
         </div>
       )}
-
-      {/* Row 3: Candlestick chart */}
-      <CandlestickChart
-        candles={candles}
-        sma50={sma50}
-        sma200={sma200}
-        bollingerBands={bollingerBands}
-        showSma50={state.overlays.sma50}
-        showSma200={state.overlays.sma200}
-        showBollinger={state.overlays.bollingerBands}
-      />
-
-      {/* RSI directly below price chart */}
-      {state.overlays.rsi && <RSIChart data={rsi} />}
-
-      {/* ATR below RSI */}
-      {state.overlays.atr && <ATRChart data={atr} />}
-
-      {/* Row 4: Streak timeline */}
-      <StreakTimeline streaks={stats.allStreaks} />
-
-      {/* Row 5: Overlay toggle panel */}
-      <OverlayTogglePanel />
-
-      {/* Row 6: Conditional panels */}
-      {state.overlays.volume && <VolumeChart candles={candles} asset={state.asset} timeRange={state.timeRange} />}
-
-      {state.overlays.fearGreed && fearGreedData.length > 0 && (
-        <FearGreedChart data={fearGreedData} timeRange={state.timeRange} />
-      )}
-
-      {state.overlays.streakHistogram && (
-        <StreakHistogram
-          greenDistribution={stats.greenStreakDistribution}
-          redDistribution={stats.redStreakDistribution}
-        />
-      )}
-
-      {state.overlays.cycleTimeline && cycleAnalysis && cycleCandles.length > 0 && (
-        <CycleTimelineChart
-          candles={cycleCandles}
-          analysis={cycleAnalysis}
-          asset={state.asset}
-        />
-      )}
-
-      {state.overlays.volatility && volatility.length > 0 && (
-        <VolatilityChart data={volatility} />
-      )}
-
-      {state.overlays.heatmap && <HeatmapChart candles={candles} timeRange={state.timeRange} />}
-
-      {state.overlays.volatilitySurface && (
-        <LazyVolatilitySurface currency={state.asset} />
-      )}
-
-      {state.overlays.btcEthComparison && (
-        <LazyComparisonChart
-          asset={state.asset}
-          currentStats={stats}
-          timeRange={state.timeRange}
-          candles={candles}
-        />
-      )}
-
-      {/* Row 7: Top streak records */}
-      <div className="grid grid-cols-1 gap-2 sm:gap-4 md:grid-cols-2">
-        <StreakRecordCard
-          title="Top Green Streaks"
-          streaks={stats.topGreenStreaks}
-          variant="green"
-        />
-        <StreakRecordCard
-          title="Top Red Streaks"
-          streaks={stats.topRedStreaks}
-          variant="red"
-        />
-      </div>
     </div>
   );
 }

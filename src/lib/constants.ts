@@ -84,3 +84,26 @@ export const TIME_RANGE_DAYS: Record<string, number> = {
   '2Y': 730,
   ALL: 9999,
 };
+
+/** Ordered list of draggable card IDs. Fixed cards (stat rows) are NOT included. */
+export const CARD_IDS = [
+  'cyclePosition',
+  'priceChart',
+  'rsi',
+  'atr',
+  'streakTimeline',
+  'overlayPanel',
+  'volume',
+  'fearGreed',
+  'streakHistogram',
+  'cycleTimeline',
+  'volatility',
+  'heatmap',
+  'volatilitySurface',
+  'btcEthComparison',
+  'streakRecords',
+] as const;
+
+export type CardId = (typeof CARD_IDS)[number];
+
+export type CardSize = 'S' | 'M' | 'L';
