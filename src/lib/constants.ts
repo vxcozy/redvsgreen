@@ -75,6 +75,8 @@ export const DEFAULT_OVERLAYS = {
   cycleTimeline: false,
   volatility: false,
   volatilitySurface: false,
+  ivTermStructure: false,
+  aaveLiquidations: false,
 } as const;
 
 export const TIME_RANGE_DAYS: Record<string, number> = {
@@ -93,12 +95,14 @@ export const CARD_IDS = [
   'rsi',
   'atr',
   'fearGreed',
+  'volatility',
   'volume',
   'heatmap',
   'streakHistogram',
   'streakTimeline',
-  'volatility',
   'volatilitySurface',
+  'ivTermStructure',
+  'aaveLiquidations',
   'cycleTimeline',
   'btcEthComparison',
   'streakRecords',
@@ -118,4 +122,6 @@ export const DEFAULT_SIZES: Partial<Record<CardId, CardSize>> = {
   streakHistogram: 'S',
   volatility: 'S',
   volatilitySurface: 'S',
+  ivTermStructure: 'M',
+  aaveLiquidations: 'M',
 };

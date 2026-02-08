@@ -27,6 +27,8 @@ import HeatmapChart from '@/components/charts/HeatmapChart';
 import LazyComparisonChart from '@/components/charts/LazyComparisonChart';
 import CycleTimelineChart from '@/components/charts/CycleTimelineChart';
 import LazyVolatilitySurface from '@/components/charts/LazyVolatilitySurface';
+import IVTermStructureChart from '@/components/charts/IVTermStructureChart';
+import AaveLiquidationMonitor from '@/components/charts/AaveLiquidationMonitor';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import SkeletonCard from '@/components/ui/SkeletonCard';
 import CardWrapper from '@/components/ui/CardWrapper';
@@ -112,6 +114,8 @@ export default function Dashboard() {
     if (state.overlays.volatility && volatility.length > 0) vis.add('volatility');
     if (state.overlays.heatmap) vis.add('heatmap');
     if (state.overlays.volatilitySurface) vis.add('volatilitySurface');
+    if (state.overlays.ivTermStructure) vis.add('ivTermStructure');
+    if (state.overlays.aaveLiquidations) vis.add('aaveLiquidations');
     if (state.overlays.btcEthComparison) vis.add('btcEthComparison');
 
     return vis;
@@ -246,6 +250,12 @@ export default function Dashboard() {
 
       case 'volatilitySurface':
         return <LazyVolatilitySurface currency={state.asset} />;
+
+      case 'ivTermStructure':
+        return <IVTermStructureChart currency={state.asset} />;
+
+      case 'aaveLiquidations':
+        return <AaveLiquidationMonitor />;
 
       case 'btcEthComparison':
         return (

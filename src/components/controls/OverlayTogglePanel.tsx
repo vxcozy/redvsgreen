@@ -30,6 +30,13 @@ const OVERLAY_GROUPS: { title: string; items: ToggleItem[] }[] = [
       { key: 'heatmap', label: 'Heatmap', color: '#f97316' },
       { key: 'volatility', label: 'Volatility', color: '#ec4899' },
       { key: 'volatilitySurface', label: 'Vol Surface 3D', color: '#8b5cf6' },
+      { key: 'ivTermStructure', label: 'IV Term Str.', color: '#14b8a6' },
+    ],
+  },
+  {
+    title: 'DeFi',
+    items: [
+      { key: 'aaveLiquidations', label: 'Aave Monitor', color: '#a78bfa' },
     ],
   },
   {
